@@ -192,9 +192,13 @@ Pequeñas píldoras de estado. Usan los colores semánticos de la sección 1.
 
 ---
 
-### 4.6 Alertas
+### 4.6 Alertas y Notificaciones
 
-Para retroalimentación global: errores de API, confirmaciones, advertencias.
+Existen dos tipos de retroalimentación según su contexto:
+
+#### A) Alertas inline — `<Alert>` de Mantine
+
+Usar cuando el error está directamente ligado a un formulario o sección visible en pantalla (e.g. error de validación de campos).
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -203,17 +207,60 @@ Para retroalimentación global: errores de API, confirmaciones, advertencias.
 └─────────────────────────────────────────────────────┘
 ```
 
-| Tipo           | Ícono sugerido | Fondo     | Borde     | Texto     |
-| -------------- | -------------- | --------- | --------- | --------- |
-| `info`         | `CircleInfo`   | `#EFF6FF` | `#BFDBFE` | `#1D4ED8` |
-| `success`      | `CircleCheck`  | `#F0FDF4` | `#BBF7D0` | `#15803D` |
-| `warning`      | `TriangleExclamation` | `#FFFBEB` | `#FDE68A` | `#B45309` |
-| `error`        | `CircleXmark`  | `#FEF2F2` | `#FECACA` | `#B91C1C` |
+| Tipo       | Fondo     | Borde     | Texto     |
+| ---------- | --------- | --------- | --------- |
+| `info`     | `#EFF6FF` | `#BFDBFE` | `#1D4ED8` |
+| `success`  | `#F0FDF4` | `#BBF7D0` | `#15803D` |
+| `warning`  | `#FFFBEB` | `#FDE68A` | `#B45309` |
+| `error`    | `#FEF2F2` | `#FECACA` | `#B91C1C` |
 
-- Border-radius: `6px`
-- Padding: `12px 16px`
-- Siempre incluir ícono (de Gravity UI Icons).
+- Border-radius: `6px` · Padding: `12px 16px`
+- Siempre incluir ícono de Gravity UI Icons.
 - El botón de cierre `[✕]` es obligatorio en alertas no críticas.
+
+#### B) Toasts — `sonner`
+
+Usar para **retroalimentación global no bloqueante**: errores de API, confirmaciones de acciones, avisos de red. El toast aparece y desaparece solo; el usuario no necesita interactuar con él.
+
+```jsx
+import { toast } from "sonner";
+
+tost.error("Credenciales incorrectas.");   // error de API
+toast.success("Guardado correctamente.");  // confirmación
+toast.warning("Stock bajo en artículo X."); // advertencia
+toast("Operación completada.");             // neutral / info
+```
+
+**Configuración del `<Toaster>` en `main.jsx`:**
+
+```jsx
+import { Toaster } from "sonner";
+
+// Dentro del árbol de render, una sola vez:
+<Toaster
+  position="bottom-right"
+  toastOptions={{
+    style: {
+      fontFamily: "Inter, sans-serif",
+      fontSize: "0.875rem",
+      borderRadius: "6px",
+      border: "1px solid #E0E0E0",
+      background: "#FFFFFF",
+      color: "#111111",
+    },
+  }}
+/>
+```
+
+**Cuándo usar cada uno:**
+
+| Situación                             | Componente        |
+| ------------------------------------- | ----------------- |
+| Error de validación de campo          | Inline (debajo del input) |
+| Error de respuesta de API             | `toast.error()`   |
+| Acción destructiva confirmada         | `toast.success()` |
+| Advertencia de negocio (stock, etc.)  | `toast.warning()` |
+| Notificación neutral / info           | `toast()`         |
 
 ---
 

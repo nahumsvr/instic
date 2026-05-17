@@ -169,9 +169,9 @@ import {
 - Toda petición `fetch` debe estar envuelta en un bloque `try/catch`.
 - Verificar siempre `res.ok` antes de procesar la respuesta; si es `false`, lanzar un `Error` con el código de estado.
 - Mantener tres estados para operaciones asíncronas: `data`, `loading` y `error`.
-- Mostrar al usuario un mensaje claro cuando ocurra un error (usar componentes de Mantine como `<Alert>` o `<Notification>`).
+- Mostrar al usuario un mensaje claro cuando ocurra un error usando `toast` de **sonner**.
 - **Nunca** usar `console.error` como único manejo de errores — debe acompañarse de retroalimentación visual.
-- En formularios, manejar errores de validación campo a campo y mostrarlos junto al input correspondiente.
+- En formularios, manejar errores de validación y mostrarlos usando `toast` de **sonner**.
 - Los errores de red (sin conexión, timeout) deben comunicarse al usuario con un mensaje descriptivo.
 
 ### Patrón estándar para peticiones HTTP
@@ -225,6 +225,7 @@ if (error)
 | Componentes UI      | `@mantine/core`             | `npm install @mantine/core @mantine/hooks`  |
 | Gráficos            | `recharts`                  | `npm install recharts`                      |
 | Estilos utilitarios | `tailwindcss`               | `npm install tailwindcss @tailwindcss/vite` |
+| Notificaciones      | `sonner`                    | `npm install sonner`                        |
 
 ---
 
@@ -236,3 +237,5 @@ if (error)
 4. Todos los componentes deben ser **funcionales** (no usar class components).
 5. Usar **ESModules** (`import`/`export`), nunca `require`.
 6. **Manejo de errores obligatorio**: todo `fetch`, toda operación asíncrona y todo formulario deben incluir manejo de errores con retroalimentación visual al usuario. No se acepta código que ignore o silencie errores.
+   - Para **errores de API, confirmaciones globales y validación de formularios**, usar `toast` de **sonner** (`toast.error()`, `toast.success()`, `toast.warning()`).
+   - El componente `<Toaster />` debe estar montado una sola vez en `main.jsx`.

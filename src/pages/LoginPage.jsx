@@ -3,21 +3,58 @@ import {
   TextInput,
   PasswordInput,
   Button,
-  Alert,
   Text,
   Title,
   Stack,
   Paper,
-  Center,
   Box,
+  Divider,
 } from "@mantine/core";
 import { Person, Lock } from "@gravity-ui/icons";
+import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from "../config/api";
 import { useAuth } from "../context/AuthContext";
 
+/* ─── Tokens del design system ─────────────────────────────────────────── */
+const ds = {
+  bg: "#F5F5F5",
+  surface: "#FFFFFF",
+  border: "#E0E0E0",
+  text: "#111111",
+  muted: "#6B6B6B",
+  subtle: "#AAAAAA",
+  accent: "#111111",
+  accentHover: "#333333",
+  accentFg: "#FFFFFF",
+  // semántico error
+  dangerBg: "#FEF2F2",
+  dangerBorder: "#FECACA",
+  dangerText: "#B91C1C",
+};
+
+/* ─── Estilos compartidos ────────────────────────────────────────────────── */
+const inputStyles = {
+  label: {
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    color: ds.muted,
+    marginBottom: 4,
+    fontFamily: "Inter, sans-serif",
+  },
+  input: {
+    background: ds.surface,
+    border: `1px solid ${ds.border}`,
+    borderRadius: 6,
+    color: ds.text,
+    fontSize: "0.875rem",
+    fontFamily: "Inter, sans-serif",
+    transition: "border-color 150ms ease-in-out",
+  },
+};
+
 /**
- * Pantalla de inicio de sesión.
+ * Pantalla de inicio de sesión — design system Instic (blanco/negro).
  * POST /auth/login → recibe accessToken → decodifica rol → redirige según rol.
  */
 export default function LoginPage() {
@@ -27,7 +64,8 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // `submitted` se activa al intentar enviar para resaltar campos vacíos
+  const [submitted, setSubmitted] = useState(false);
 
   /** Decodifica el payload de un JWT sin verificar firma (solo lectura de datos). */
   function decodeJwtPayload(token) {
@@ -41,15 +79,15 @@ export default function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError(null);
+    setSubmitted(true);
 
-    // Validación básica en cliente
+    // Validación básica en cliente — errores de campo se muestran usando toast
     if (!username.trim()) {
-      setError("El correo electrónico es requerido.");
+      toast.error("El usuario es requerido.");
       return;
     }
     if (!password) {
-      setError("La contraseña es requerida.");
+      toast.error("La contraseña es requerida.");
       return;
     }
 
@@ -74,6 +112,7 @@ export default function LoginPage() {
       const userData = { username: username.trim(), rol };
 
       login(accessToken, userData);
+      toast.success("Sesión iniciada correctamente");
 
       // Redirige según el rol
       if (rol === "admin") {
@@ -82,7 +121,8 @@ export default function LoginPage() {
         navigate("/scan");
       }
     } catch (err) {
-      setError(err.message);
+      // Error de API → toast no bloqueante
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -92,148 +132,184 @@ export default function LoginPage() {
     <Box
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
+        background: ds.bg,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        fontFamily: "Inter, sans-serif",
       }}
     >
-      <Center style={{ width: "100%", padding: "1.5rem" }}>
-        <Paper
-          shadow="xl"
-          radius="xl"
-          p="xl"
-          style={{
-            width: "100%",
-            maxWidth: 420,
-            background: "rgba(255, 255, 255, 0.06)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-          }}
-        >
-          {/* Encabezado */}
-          <Stack align="center" gap="xs" mb="xl">
+      {/* Card central */}
+      <Paper
+        style={{
+          width: "100%",
+          maxWidth: 400,
+          margin: "0 1.5rem",
+          background: ds.surface,
+          border: `1px solid ${ds.border}`,
+          borderRadius: 8,
+          padding: 32,
+          boxShadow: "none",
+        }}
+      >
+        {/* Encabezado */}
+        <Stack gap={4} mb={28}>
+          {/* Logotipo / marca */}
+          <Box
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 8,
+            }}
+          >
             <Box
               style={{
-                width: 60,
-                height: 60,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                background: ds.accent,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 8px 32px rgba(102, 126, 234, 0.45)",
+                flexShrink: 0,
               }}
             >
-              <Person width={28} height={28} style={{ color: "#fff" }} />
+              <Person width={14} height={14} style={{ color: ds.accentFg }} />
             </Box>
-            <Title
-              order={1}
-              style={{ color: "#fff", fontSize: "1.6rem", fontWeight: 700 }}
+            <Text
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                color: ds.text,
+                letterSpacing: "-0.01em",
+                fontFamily: "Inter, sans-serif",
+              }}
             >
-              Instic
-            </Title>
-            <Text size="sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-              Inicia sesión para continuar
+              instic
             </Text>
+          </Box>
+
+          <Title
+            order={1}
+            style={{
+              fontSize: "1.375rem",
+              fontWeight: 700,
+              color: ds.text,
+              letterSpacing: "-0.02em",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Iniciar sesión
+          </Title>
+          <Text
+            style={{
+              fontSize: "0.875rem",
+              color: ds.muted,
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Ingresa tus credenciales para continuar.
+          </Text>
+        </Stack>
+
+        <Divider color={ds.border} mb={24} />
+
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} noValidate>
+          <Stack gap={16}>
+            <TextInput
+              id="login-username"
+              label="Usuario"
+              placeholder="usuario123"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.currentTarget.value)}
+              leftSection={
+                <Person width={15} height={15} style={{ color: ds.subtle }} />
+              }
+              disabled={loading}
+              styles={{
+                ...inputStyles,
+                input: {
+                  ...inputStyles.input,
+                  borderColor: submitted && !username.trim() ? ds.dangerBorder : ds.border,
+                },
+              }}
+            />
+
+            <PasswordInput
+              id="login-password"
+              label="Contraseña"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.currentTarget.value)}
+              leftSection={
+                <Lock width={15} height={15} style={{ color: ds.subtle }} />
+              }
+              disabled={loading}
+              styles={{
+                ...inputStyles,
+                input: {
+                  ...inputStyles.input,
+                  borderColor: submitted && !password ? ds.dangerBorder : ds.border,
+                },
+                innerInput: {
+                  color: ds.text,
+                  fontSize: "0.875rem",
+                  fontFamily: "Inter, sans-serif",
+                },
+              }}
+            />
+
+            <Button
+              id="login-submit-btn"
+              type="submit"
+              fullWidth
+              size="sm"
+              loading={loading}
+              mt={4}
+              style={{
+                background: ds.accent,
+                color: ds.accentFg,
+                border: "none",
+                borderRadius: 6,
+                height: 38,
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                letterSpacing: "0.01em",
+                fontFamily: "Inter, sans-serif",
+                transition: "background-color 150ms ease-in-out",
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+              styles={{
+                root: {
+                  "&:hover:not([data-disabled])": {
+                    background: ds.accentHover,
+                  },
+                },
+              }}
+            >
+              Entrar
+            </Button>
           </Stack>
+        </form>
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} noValidate>
-            <Stack gap="md">
-              {error && (
-                <Alert
-                  id="login-error-alert"
-                  color="red"
-                  variant="light"
-                  radius="md"
-                  title="Error de acceso"
-                  styles={{
-                    root: {
-                      background: "rgba(255,80,80,0.12)",
-                      border: "1px solid rgba(255,80,80,0.3)",
-                    },
-                    title: { color: "#ff6b6b" },
-                    message: { color: "rgba(255,255,255,0.8)" },
-                  }}
-                >
-                  {error}
-                </Alert>
-              )}
-
-              <TextInput
-                id="login-email"
-                label="Correo electrónico"
-                placeholder="usuario123"
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.currentTarget.value)}
-                leftSection={<Person width={16} height={16} />}
-                disabled={loading}
-                styles={{
-                  label: { color: "rgba(255,255,255,0.75)", marginBottom: 6 },
-                  input: {
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    color: "#fff",
-                    "::placeholder": { color: "rgba(255,255,255,0.35)" },
-                  },
-                }}
-              />
-
-              <PasswordInput
-                id="login-password"
-                label="Contraseña"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.currentTarget.value)}
-                leftSection={<Lock width={16} height={16} />}
-                disabled={loading}
-                styles={{
-                  label: { color: "rgba(255,255,255,0.75)", marginBottom: 6 },
-                  input: {
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    color: "#fff",
-                  },
-                  innerInput: { color: "#fff" },
-                }}
-              />
-
-              <Button
-                id="login-submit-btn"
-                type="submit"
-                fullWidth
-                size="md"
-                radius="md"
-                loading={loading}
-                mt="xs"
-                style={{
-                  background: "linear-gradient(135deg, #667eea, #764ba2)",
-                  border: "none",
-                  fontWeight: 600,
-                  letterSpacing: "0.5px",
-                  boxShadow: "0 4px 20px rgba(102,126,234,0.4)",
-                  transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                }}
-                styles={{
-                  root: {
-                    "&:hover:not(:disabled)": {
-                      transform: "translateY(-1px)",
-                      boxShadow: "0 6px 28px rgba(102,126,234,0.55)",
-                    },
-                  },
-                }}
-              >
-                Entrar
-              </Button>
-            </Stack>
-          </form>
-        </Paper>
-      </Center>
+        {/* Pie de card */}
+        <Text
+          style={{
+            marginTop: 20,
+            fontSize: "0.75rem",
+            color: ds.subtle,
+            textAlign: "center",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          Acceso restringido al personal autorizado.
+        </Text>
+      </Paper>
     </Box>
   );
 }
