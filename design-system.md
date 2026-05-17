@@ -18,37 +18,39 @@ Toda decisión visual debe basarse en este documento antes de escribir código.
 
 ## 1. Paleta de Colores
 
+Todos los colores de la aplicación **deben** consumirse mediante variables CSS (ej. `var(--ds-bg)`). **Está estrictamente prohibido usar valores hexadecimales hardcodeados en los archivos `.jsx`**. Las variables reaccionan automáticamente al esquema de color activo (light/dark) gracias a `[data-mantine-color-scheme]`.
+
 ### Base (90 % de la UI)
 
-| Token            | Valor hex | Uso                                      |
-| ---------------- | --------- | ---------------------------------------- |
-| `--color-bg`     | `#FFFFFF` | Fondo de páginas y cards                 |
-| `--color-surface`| `#F5F5F5` | Fondo secundario (tablas, inputs)        |
-| `--color-border` | `#E0E0E0` | Líneas divisoras, bordes de inputs       |
-| `--color-text`   | `#111111` | Texto principal                          |
-| `--color-muted`  | `#6B6B6B` | Labels, placeholders, texto secundario   |
-| `--color-subtle` | `#AAAAAA` | Texto deshabilitado, metadatos           |
+| Token            | Light     | Dark      | Uso                                      |
+| ---------------- | --------- | --------- | ---------------------------------------- |
+| `--ds-bg`        | `#F5F5F5` | `#111111` | Fondo general de la aplicación           |
+| `--ds-surface`   | `#FFFFFF` | `#1A1A1A` | Fondo secundario (cards, inputs)         |
+| `--ds-border`    | `#E0E0E0` | `#333333` | Líneas divisoras, bordes de inputs       |
+| `--ds-text`      | `#111111` | `#FFFFFF` | Texto principal                          |
+| `--ds-muted`     | `#6B6B6B` | `#A3A3A3` | Labels, placeholders, texto secundario   |
+| `--ds-subtle`    | `#AAAAAA` | `#666666` | Texto deshabilitado, metadatos           |
 
 ### Acento (el único color que "llama la atención")
 
-| Token               | Valor hex | Uso                                              |
-| ------------------- | --------- | ------------------------------------------------ |
-| `--color-accent`    | `#1A1A1A` | Botón primario, focus ring, links activos        |
-| `--color-accent-hover` | `#333333` | Estado hover del botón primario               |
-| `--color-accent-fg` | `#FFFFFF` | Texto/ícono encima del acento                    |
+| Token               | Light     | Dark      | Uso                                              |
+| ------------------- | --------- | --------- | ------------------------------------------------ |
+| `--ds-accent`       | `#111111` | `#FFFFFF` | Botón primario, focus ring, links activos        |
+| `--ds-accent-hover` | `#333333` | `#E5E5E5` | Estado hover del botón primario               |
+| `--ds-accent-fg`    | `#FFFFFF` | `#000000` | Texto/ícono encima del acento                    |
 
-> El acento es simplemente el negro más puro. El contraste es el protagonista.
+> El acento es simplemente el contraste máximo. El contraste es el protagonista.
 
 ### Colores Semánticos (para alertas y estados)
 
 Estos colores **solo** se usan en alertas, badges de estado e indicadores. No en botones generales ni fondos.
 
-| Tipo        | Token                | Fondo           | Borde           | Texto           |
-| ----------- | -------------------- | --------------- | --------------- | --------------- |
-| **Info**    | `--color-info-*`     | `#EFF6FF`       | `#BFDBFE`       | `#1D4ED8`       |
-| **Éxito**   | `--color-success-*`  | `#F0FDF4`       | `#BBF7D0`       | `#15803D`       |
-| **Advertencia** | `--color-warning-*` | `#FFFBEB`    | `#FDE68A`       | `#B45309`       |
-| **Error**   | `--color-danger-*`   | `#FEF2F2`       | `#FECACA`       | `#B91C1C`       |
+| Tipo        | Token                | Fondo (L/D)           | Borde (L/D)           | Texto (L/D)           |
+| ----------- | -------------------- | --------------------- | --------------------- | --------------------- |
+| **Info**    | `--ds-info-*`        | `#EFF6FF` / `#1E3A8A` | `#BFDBFE` / `#1E40AF` | `#1D4ED8` / `#93C5FD` |
+| **Éxito**   | `--ds-success-*`     | `#F0FDF4` / `#052E16` | `#BBF7D0` / `#166534` | `#15803D` / `#86EFAC` |
+| **Advertencia** | `--ds-warning-*` | `#FFFBEB` / `#451A03` | `#FDE68A` / `#78350F` | `#B45309` / `#FDE047` |
+| **Error**   | `--ds-danger-*`      | `#FEF2F2` / `#450A0A` | `#FECACA` / `#7F1D1D` | `#B91C1C` / `#FCA5A5` |
 
 ---
 
@@ -344,5 +346,5 @@ transition: background-color 150ms ease-in-out,
 3. **Un botón primario por vista** — el resto son secundarios o ghost.
 4. **Los errores siempre en rojo semántico** (`#B91C1C`), nunca en el color de acento.
 5. **No agregar sombras adicionales** a las definidas aquí.
-6. **Modo claro solamente** — este sistema no define modo oscuro.
+6. **Soporte Dinámico de Temas** — la interfaz debe soportar modo oscuro y claro de forma automática utilizando las variables CSS `--ds-*`. No se admiten colores hexadecimales fijos.
 7. **Consistencia ante creatividad** — preferir lo establecido aquí sobre soluciones ad-hoc.

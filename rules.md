@@ -122,6 +122,12 @@ import { Person } from "@gravity-ui/icons";
   import "@mantine/core/styles.css";
   ```
 
+### Manejo del Modo Oscuro
+
+- Usar **variables CSS dinámicas** definidas en `index.css` (`var(--ds-bg)`, etc.) para cualquier estilo personalizado en componentes.
+- **Nunca hardcodear valores hexadecimales** directamente en los archivos `.jsx` o diccionarios JS. Los colores deben reaccionar al estado de Mantine de forma nativa mediante el uso de `data-mantine-color-scheme`.
+- Si se requiere asegurar que la aplicación aplique un tema independientemente del `localStorage`, usar `<MantineProvider forceColorScheme="dark">` (o `light`) en lugar de `defaultColorScheme`.
+
 ```jsx
 // Ejemplo correcto
 import { Button, TextInput } from '@mantine/core';

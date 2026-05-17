@@ -18,19 +18,19 @@ import { useAuth } from "../context/AuthContext";
 
 /* ─── Tokens del design system ─────────────────────────────────────────── */
 const ds = {
-  bg: "#F5F5F5",
-  surface: "#FFFFFF",
-  border: "#E0E0E0",
-  text: "#111111",
-  muted: "#6B6B6B",
-  subtle: "#AAAAAA",
-  accent: "#111111",
-  accentHover: "#333333",
-  accentFg: "#FFFFFF",
+  bg: "var(--ds-bg)",
+  surface: "var(--ds-surface)",
+  border: "var(--ds-border)",
+  text: "var(--ds-text)",
+  muted: "var(--ds-muted)",
+  subtle: "var(--ds-subtle)",
+  accent: "var(--ds-accent)",
+  accentHover: "var(--ds-accent-hover)",
+  accentFg: "var(--ds-accent-fg)",
   // semántico error
-  dangerBg: "#FEF2F2",
-  dangerBorder: "#FECACA",
-  dangerText: "#B91C1C",
+  dangerBg: "var(--ds-danger-bg)",
+  dangerBorder: "var(--ds-danger-border)",
+  dangerText: "var(--ds-danger-text)",
 };
 
 /* ─── Estilos compartidos ────────────────────────────────────────────────── */

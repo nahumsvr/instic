@@ -11,20 +11,21 @@ import App from "./App.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      <MantineProvider defaultColorScheme="dark">
+      <MantineProvider forceColorScheme="dark">
         <AuthProvider>
           <App />
           <Toaster
             position="bottom-right"
             richColors
+            theme="dark"
             toastOptions={{
               style: {
                 fontFamily: "Inter, sans-serif",
                 fontSize: "0.875rem",
                 borderRadius: "6px",
-                border: "1px solid #E0E0E0",
-                background: "#FFFFFF",
-                color: "#111111",
+                border: "1px solid var(--ds-border)",
+                background: "var(--ds-surface)",
+                color: "var(--ds-text)",
               },
             }}
           />
