@@ -174,21 +174,21 @@ function Historial() {
         <tbody>
           {data.map((item, idx) => (
             <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-              <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id}</td>
-              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</td>
-              <td className="px-4 py-3 text-[var(--ds-text)]">{item.type}</td>
+              <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
+              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.created_at || Date.now()).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-[var(--ds-text)]">{item.tipo}</td>
               <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
-              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.quantity}</td>
-              <td className="px-4 py-3"><BadgeStatus status={item.status} /></td>
+              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
+              <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
               <td className="px-4 py-3 text-right">
                 <Group justify="flex-end" gap="xs">
-                  {item.status === 'PENDING' && (
-                    <ButtonPrimary onClick={() => updateStatus(item.id, 'COMPLETED')}>
+                  {item.estado === 'PENDING' && (
+                    <ButtonPrimary onClick={() => updateStatus(item.id_movimiento, 'COMPLETED')}>
                       Completar
                     </ButtonPrimary>
                   )}
-                  {item.status === 'COMPLETED' && (
-                    <ButtonDanger onClick={() => cancelMovement(item.id)}>
+                  {item.estado === 'COMPLETED' && (
+                    <ButtonDanger onClick={() => cancelMovement(item.id_movimiento)}>
                       Anular
                     </ButtonDanger>
                   )}
