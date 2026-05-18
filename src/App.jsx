@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router";
 import LoginPage from "./pages/LoginPage";
+import Movimientos from "./pages/Movimientos";
 
 /**
  * Enrutador principal de la aplicación.
@@ -16,13 +17,15 @@ function App() {
     <Routes>
       {/* Ruta raíz: redirige al login */}
       <Route path="/" element={<Navigate to="/login" replace />} />
-
+      
       {/* Pantalla de login */}
       <Route path="/login" element={<LoginPage />} />
 
       {/* Rutas futuras — descomentar al implementar */}
       {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
       {/* <Route path="/scan" element={<ScanPage />} /> */}
+      //nueva ruta para movimientos
+      <Route path="/Movimientos" element={<Movimientos />} />
     </Routes>
   );
 }
