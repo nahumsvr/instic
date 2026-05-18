@@ -6,7 +6,7 @@ import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
 import { Plus, Xmark, Check, TrashBin } from "@gravity-ui/icons";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-const getToken = () => localStorage.getItem("token") || "";
+const getToken = () => localStorage.getItem("instic_token") || "";
 
 // Custom UI Components matching Design System
 const Card = ({ children, className = "" }) => (
@@ -43,11 +43,11 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 );
 
 const BadgeStatus = ({ status }) => {
-  let bg = "bg-[#F5F5F5]", text = "text-[#6B6B6B]", border = "border-[#E0E0E0]", dot = false;
-  if (status === 'COMPLETED') { bg = 'bg-[#EFF6FF]'; text = 'text-[#1D4ED8]'; border = 'border-[#BFDBFE]'; }
-  else if (status === 'PENDING') { bg = 'bg-[#FFFBEB]'; text = 'text-[#B45309]'; border = 'border-[#FDE68A]'; dot = true; }
-  else if (status === 'CANCELLED') { bg = 'bg-[#F5F5F5]'; text = 'text-[#6B6B6B]'; border = 'border-[#E0E0E0]'; }
-  else if (status === 'APPROVED' || status === 'IN_PROGRESS') { bg = 'bg-[#EFF6FF]'; text = 'text-[#1D4ED8]'; border = 'border-[#BFDBFE]'; dot = true; }
+  let bg = "bg-[var(--ds-bg)]", text = "text-[var(--ds-muted)]", border = "border-[var(--ds-border)]", dot = false;
+  if (status === 'COMPLETED') { bg = 'bg-blue-500/10'; text = 'text-blue-600 dark:text-blue-400'; border = 'border-blue-500/20'; }
+  else if (status === 'PENDING') { bg = 'bg-yellow-500/10'; text = 'text-yellow-600 dark:text-yellow-400'; border = 'border-yellow-500/20'; dot = true; }
+  else if (status === 'CANCELLED') { bg = 'bg-[var(--ds-bg)]'; text = 'text-[var(--ds-muted)]'; border = 'border-[var(--ds-border)]'; }
+  else if (status === 'APPROVED' || status === 'IN_PROGRESS') { bg = 'bg-blue-500/10'; text = 'text-blue-600 dark:text-blue-400'; border = 'border-blue-500/20'; dot = true; }
 
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium border ${bg} ${text} ${border}`}>
@@ -173,7 +173,7 @@ function Historial() {
         </thead>
         <tbody>
           {data.map((item, idx) => (
-            <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[#FAFAFA]'}`}>
+            <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
               <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id}</td>
               <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</td>
               <td className="px-4 py-3 text-[var(--ds-text)]">{item.type}</td>
@@ -535,7 +535,7 @@ function Ordenes() {
           </thead>
           <tbody>
             {orders.map((item, idx) => (
-              <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[#FAFAFA]'}`}>
+              <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
                 <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qrUrl?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.name || item.articleId}</td>
                 <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.quantity}</td>
@@ -592,10 +592,10 @@ function Ordenes() {
 
       <Modal opened={qrModalOpened} onClose={() => setQrModalOpened(false)} title="Orden Generada Exitosamente" shadow="0 8px 40px rgba(0,0,0,0.12)">
         <div className="flex flex-col items-center gap-6 p-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-[#E0E0E0]">
+          <div className="bg-[var(--ds-surface)] p-4 rounded-lg shadow-sm border border-[var(--ds-border)]">
             <QRCode value={generatedQr} size={200} />
           </div>
-          <p className="font-mono text-sm text-[var(--ds-text)] bg-[#F5F5F5] border border-[#E0E0E0] px-3 py-1 rounded-md">{generatedQr}</p>
+          <p className="font-mono text-sm text-[var(--ds-text)] bg-[var(--ds-bg)] border border-[var(--ds-border)] px-3 py-1 rounded-md">{generatedQr}</p>
           <ButtonSecondary onClick={() => setQrModalOpened(false)} className="w-full">
             Cerrar
           </ButtonSecondary>
@@ -603,7 +603,7 @@ function Ordenes() {
       </Modal>
 
       <Modal opened={scannerOpened} onClose={() => setScannerOpened(false)} title="Escanear QR de Orden" size="lg">
-        <div className="overflow-hidden rounded-lg bg-black/5 flex justify-center p-4">
+        <div className="overflow-hidden rounded-lg bg-[var(--ds-bg)] flex justify-center p-4">
           <BarcodeScanner onUpdate={handleScan} />
         </div>
       </Modal>
@@ -611,7 +611,7 @@ function Ordenes() {
       <Modal opened={!!scannedOrder} onClose={() => setScannedOrder(null)} title="Detalle de la Orden Escaneada">
         {scannedOrder && (
           <div className="flex flex-col gap-4">
-            <div className="bg-[#F5F5F5] p-4 rounded-lg border border-[#E0E0E0]">
+            <div className="bg-[var(--ds-bg)] p-4 rounded-lg border border-[var(--ds-border)]">
               <p className="text-sm text-[var(--ds-muted)] mb-1">Artículo</p>
               <p className="font-medium text-[var(--ds-text)] mb-3">{scannedOrder.article?.name}</p>
               
