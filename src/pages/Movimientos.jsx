@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, Select, NumberInput, Loader, Group, Modal } from "@mantine/core";
 import { toast } from "sonner";
-import QRCode from "react-qr-code";
+import QRCodeModule from "react-qr-code";
+const QRCode = QRCodeModule.default || QRCodeModule;
 import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
 import { Plus, Xmark, Check, TrashBin } from "@gravity-ui/icons";
 
@@ -173,7 +174,7 @@ function Historial() {
         </thead>
         <tbody>
           {data.map((item, idx) => (
-            <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
+            <tr key={item.id_movimiento} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
               <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
               <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.created_at || Date.now()).toLocaleDateString()}</td>
               <td className="px-4 py-3 text-[var(--ds-text)]">{item.tipo}</td>
@@ -535,7 +536,7 @@ function Ordenes() {
           </thead>
           <tbody>
             {orders.map((item, idx) => (
-              <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
+              <tr key={item.id_orden} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
                 <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qr_code?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
                 <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
