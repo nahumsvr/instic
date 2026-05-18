@@ -104,14 +104,14 @@ export default function LoginPage() {
         throw new Error(body?.message ?? `Error ${res.status}: ${res.statusText}`);
       }
 
-      const { accessToken } = await res.json();
+      const { access_token } = await res.json();
 
       // Decodifica el payload para extraer el rol del usuario
-      const payload = decodeJwtPayload(accessToken);
+      const payload = decodeJwtPayload(access_token);
       const rol = payload?.rol ?? payload?.role ?? "empleado";
       const userData = { username: username.trim(), rol };
 
-      login(accessToken, userData);
+      login(access_token, userData);
       toast.success("Sesión iniciada correctamente");
 
       // Redirige según el rol

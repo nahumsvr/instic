@@ -24,8 +24,8 @@ function App() {
       {/* Rutas futuras — descomentar al implementar */}
       {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
       {/* <Route path="/scan" element={<ScanPage />} /> */}
-      //nueva ruta para movimientos
-      <Route path="/Movimientos" element={<Movimientos />} />
+      {/* nueva ruta para movimientos */}
+      <Route path="/movimientos" element={<Movimientos />} />
     </Routes>
   );
 }
