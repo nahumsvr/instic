@@ -177,7 +177,7 @@ function Historial() {
               <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id}</td>
               <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</td>
               <td className="px-4 py-3 text-[var(--ds-text)]">{item.type}</td>
-              <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.name || item.articleId}</td>
+              <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
               <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.quantity}</td>
               <td className="px-4 py-3"><BadgeStatus status={item.status} /></td>
               <td className="px-4 py-3 text-right">
@@ -289,8 +289,8 @@ function Registrar() {
     }
   };
 
-  const articleOptions = articles.map(a => ({ value: a.id.toString(), label: `${a.code} - ${a.name}` }));
-  const locationOptions = locations.map(l => ({ value: l.id.toString(), label: l.name }));
+  const articleOptions = articles.map(a => ({ value: (a.id_articulo || a.id || '').toString(), label: `${a.codigo || a.code} - ${a.nombre || a.name}` }));
+  const locationOptions = locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }));
 
   if (loading) return <div className="flex justify-center p-8"><Loader color="gray" /></div>;
 
@@ -537,10 +537,10 @@ function Ordenes() {
             {orders.map((item, idx) => (
               <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
                 <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qrUrl?.split('/').pop() || '-'}</td>
-                <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.name || item.articleId}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
                 <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.quantity}</td>
-                <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.name || item.originId}</td>
-                <td className="px-4 py-3 text-[var(--ds-text)]">{item.destination?.name || item.destinationId}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.nombre || item.origin?.name || item.originId}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.destination?.nombre || item.destination?.name || item.destinationId}</td>
                 <td className="px-4 py-3"><BadgeStatus status={item.status} /></td>
               </tr>
             ))}
@@ -555,7 +555,7 @@ function Ordenes() {
         <form onSubmit={handleGenerateOrder} className="flex flex-col gap-4">
           <Select
             label="Artículo"
-            data={articles.map(a => ({ value: a.id.toString(), label: `${a.code} - ${a.name}` }))}
+            data={articles.map(a => ({ value: (a.id_articulo || a.id || '').toString(), label: `${a.codigo || a.code} - ${a.nombre || a.name}` }))}
             value={formData.articleId}
             onChange={(v) => setFormData({...formData, articleId: v})}
             required
@@ -569,14 +569,14 @@ function Ordenes() {
           />
           <Select
             label="Origen (Proveedor / Almacén)"
-            data={locations.map(l => ({ value: l.id.toString(), label: l.name }))}
+            data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
             value={formData.originId}
             onChange={(v) => setFormData({...formData, originId: v})}
             required
           />
           <Select
             label="Destino (Tienda)"
-            data={locations.map(l => ({ value: l.id.toString(), label: l.name }))}
+            data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
             value={formData.destinationId}
             onChange={(v) => setFormData({...formData, destinationId: v})}
             required
@@ -613,7 +613,7 @@ function Ordenes() {
           <div className="flex flex-col gap-4">
             <div className="bg-[var(--ds-bg)] p-4 rounded-lg border border-[var(--ds-border)]">
               <p className="text-sm text-[var(--ds-muted)] mb-1">Artículo</p>
-              <p className="font-medium text-[var(--ds-text)] mb-3">{scannedOrder.article?.name}</p>
+              <p className="font-medium text-[var(--ds-text)] mb-3">{scannedOrder.article?.nombre || scannedOrder.article?.name}</p>
               
               <Group grow>
                 <div>
