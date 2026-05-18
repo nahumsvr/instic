@@ -67,21 +67,14 @@ export default function LoginPage() {
   // `submitted` se activa al intentar enviar para resaltar campos vacíos
   const [submitted, setSubmitted] = useState(false);
 
-  const MOCK_USERS = [
-    { username: "admin", nombre: "Administrador", password: "admin123", rol: "admin" },
-    { username: "carlos", nombre: "Carlos Martínez", password: "user123", rol: "empleado" },
-    { username: "laura", nombre: "Laura Gómez", password: "user123", rol: "empleado" },
-    { username: "miguel", nombre: "Miguel Ángel", password: "user123", rol: "empleado" },
-    { username: "sofia", nombre: "Sofía Ramírez", password: "user123", rol: "empleado" },
-    { username: "diego", nombre: "Diego Torres", password: "user123", rol: "empleado" },
-  ];
-
-  /** Genera un JWT falso para simular la estructura que espera la app */
-  function generateMockJwt(userData) {
-    const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-    const payload = btoa(JSON.stringify({ ...userData, exp: Date.now() + 86400000 }));
-    const signature = "mocksig";
-    return `${header}.${payload}.${signature}`;
+  /** Decodifica el payload de un JWT sin verificar firma (solo lectura de datos). */
+  function decodeJwtPayload(token) {
+    try {
+      const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(atob(base64));
+    } catch {
+      return null;
+    }
   }
 
   async function handleSubmit(e) {
@@ -100,28 +93,35 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // Simular delay de red
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
 
-      const foundUser = MOCK_USERS.find(
-        (u) => u.username === username.trim() && u.password === password
-      );
-
-      if (!foundUser) {
-        throw new Error("Credenciales incorrectas");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message ?? `Error ${res.status}: ${res.statusText}`);
       }
 
-      const userData = { username: foundUser.username, nombre: foundUser.nombre, rol: foundUser.rol };
-      const accessToken = generateMockJwt(userData);
+      const { accessToken } = await res.json();
+
+      // Decodifica el payload para extraer el rol del usuario
+      const payload = decodeJwtPayload(accessToken);
+      const rol = payload?.rol ?? payload?.role ?? "empleado";
+      const userData = { username: username.trim(), rol };
 
       login(accessToken, userData);
-      toast.success(`Hola ${foundUser.nombre}, sesión iniciada correctamente`);
+      toast.success("Sesión iniciada correctamente");
 
-      // Redirige al inventario maestro sin importar el rol,
-      // para que allí se aplique la lógica según si es admin o empleado.
-      navigate("/inventory");
+      // Redirige según el rol
+      if (rol === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/scan");
+      }
     } catch (err) {
-      // Error de API o credenciales → toast no bloqueante
+      // Error de API → toast no bloqueante
       toast.error(err.message);
     } finally {
       setLoading(false);

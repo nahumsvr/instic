@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { Table, TextInput, Select, Button, Loader, Alert, Modal, NumberInput, Group, Menu, UnstyledButton } from "@mantine/core";
-import { Magnifier, Plus, Pencil, ChevronDown } from "@gravity-ui/icons";
+import { Table, TextInput, Select, Button, Loader, Alert, Modal, NumberInput, Group } from "@mantine/core";
+import { Magnifier, Plus, Pencil } from "@gravity-ui/icons";
 import { toast } from "sonner";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router";
 
 export default function MasterInventory() {
     const [data, setData] = useState([]);
@@ -26,10 +24,8 @@ export default function MasterInventory() {
         price: 0,
     });
 
-    // Obtener rol desde el usuario autenticado
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
-    const role = user?.rol || "empleado"; 
+    // Rol simulado: "admin" o "empleado"
+    const role = "empleado"; // Cambiar a "empleado" para probar
     const isEmployee = role === "empleado";
 
     const fetchData = async () => {
@@ -163,32 +159,6 @@ export default function MasterInventory() {
 
     return (
         <div className="p-8 max-w-6xl mx-auto">
-            {/* Barra superior de usuario estilo Zylker */}
-            <div className="flex justify-end items-center gap-5 mb-8">
-                <Menu shadow="md" width={180} position="bottom-end">
-                    <Menu.Target>
-                        <UnstyledButton className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <span className="text-[1.05rem] font-medium text-[var(--ds-text)]">
-                                {user?.nombre || "Zylker"}
-                            </span>
-                            <ChevronDown width={16} height={16} className="text-[var(--ds-muted)]" />
-                        </UnstyledButton>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                        <Menu.Item
-                            color="red"
-                            onClick={() => {
-                                logout();
-                                toast("Sesión cerrada correctamente");
-                                navigate("/login");
-                            }}
-                        >
-                            Cerrar sesión
-                        </Menu.Item>
-                    </Menu.Dropdown>
-                </Menu>
-            </div>
-
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-[var(--ds-text)]">Inventario Maestro</h1>
