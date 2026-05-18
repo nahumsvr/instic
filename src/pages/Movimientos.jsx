@@ -536,12 +536,12 @@ function Ordenes() {
           <tbody>
             {orders.map((item, idx) => (
               <tr key={item.id} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qrUrl?.split('/').pop() || '-'}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qr_code?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
-                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.quantity}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.nombre || item.origin?.name || item.originId}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.destination?.nombre || item.destination?.name || item.destinationId}</td>
-                <td className="px-4 py-3"><BadgeStatus status={item.status} /></td>
+                <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
               </tr>
             ))}
             {orders.length === 0 && !loading && (
