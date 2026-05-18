@@ -115,10 +115,10 @@ export default function LoginPage() {
       toast.success("Sesión iniciada correctamente");
 
       // Redirige según el rol
-      if (rol === "admin") {
-        navigate("/dashboard");
+      if (rol === "ADMIN" || rol === "MANAGER") {
+        navigate("/movements");
       } else {
-        navigate("/scan");
+        navigate("/movements");
       }
     } catch (err) {
       // Error de API → toast no bloqueante
@@ -286,7 +286,7 @@ export default function LoginPage() {
               }}
               styles={{
                 root: {
-                  "&:hover:not([data-disabled])": {
+                  "&:hover:not([dataDisabled])": {
                     background: ds.accentHover,
                   },
                 },

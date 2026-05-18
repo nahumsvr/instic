@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router";
-import LoginPage from "./pages/LoginPage";
-import Movimientos from "./pages/Movimientos";
+import LoginPage from "./pages/Login";
+import Movimientos from "./pages/Movements";
 
 /**
  * Enrutador principal de la aplicación.
@@ -25,7 +25,7 @@ function App() {
       {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
       {/* <Route path="/scan" element={<ScanPage />} /> */}
       {/* nueva ruta para movimientos */}
-      <Route path="/movimientos" element={<Movimientos />} />
+      <Route path="/movements" element={<Movimientos />} />
     </Routes>
   );
 }
