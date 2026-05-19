@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Tabs, Select, NumberInput, Loader, Group, Modal } from "@mantine/core";
+import { Select, NumberInput, Loader, Group, Modal } from "@mantine/core";
 import { toast } from "sonner";
 import QRCodeModule from "react-qr-code";
 const QRCode = QRCodeModule.default || QRCodeModule;
 import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
-import { Plus, Xmark, Check, TrashBin } from "@gravity-ui/icons";
+import { Plus, Clock, FilePlus, QrCode } from "@gravity-ui/icons";
+
+const SECTIONS = [
+  { id: "historial", label: "Historial", title: "Historial de Operaciones", icon: Clock },
+  { id: "registrar", label: "Registrar Movimiento", title: "Nuevo Movimiento", icon: FilePlus },
+  { id: "ordenes", label: "Órdenes y QR", title: "Órdenes de Reabastecimiento", icon: QrCode },
+];
 
 const API_URL = await import.meta.env.VITE_API_BASE_URL;
 const getToken = () => localStorage.getItem("instic_token") || "";
@@ -58,44 +64,70 @@ const BadgeStatus = ({ status }) => {
   );
 };
 
+function SectionNav({ activeTab, onChange }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Apartados de movimientos"
+      className="flex flex-col sm:flex-row gap-1 p-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface)] mb-4"
+    >
+      {SECTIONS.map(({ id, label, icon: Icon }) => {
+        const isActive = activeTab === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(id)}
+            className={[
+              "flex flex-1 items-center justify-center gap-2 min-h-[42px] px-4 py-2 rounded-md text-sm font-medium",
+              "transition-[background-color,color,border-color] duration-150 ease-in-out",
+              "border cursor-pointer",
+              isActive
+                ? "bg-[var(--ds-accent)] text-[var(--ds-accent-fg)] border-[var(--ds-accent)]"
+                : "bg-transparent text-[var(--ds-muted)] border-transparent hover:bg-[var(--ds-bg)] hover:text-[var(--ds-text)]",
+            ].join(" ")}
+          >
+            <Icon width={16} height={16} aria-hidden />
+            <span>{label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Movimientos() {
   const [activeTab, setActiveTab] = useState("historial");
 
   return (
     <div className="bg-[var(--ds-bg)] text-[var(--ds-text)] p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-8 font-inter tracking-tight">
+        <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-6 font-inter tracking-tight">
           Gestión de Movimientos
         </h1>
 
-        <Tabs value={activeTab} onChange={setActiveTab} color="dark">
-          <Tabs.List className="mb-6 border-[var(--ds-border)]">
-            <Tabs.Tab value="historial" className="font-medium text-[var(--ds-text)]">Historial</Tabs.Tab>
-            <Tabs.Tab value="registrar" className="font-medium text-[var(--ds-text)]">Registrar Movimiento</Tabs.Tab>
-            <Tabs.Tab value="ordenes" className="font-medium text-[var(--ds-text)]">Órdenes y QR</Tabs.Tab>
-          </Tabs.List>
+        <SectionNav activeTab={activeTab} onChange={setActiveTab} />
 
-          <Tabs.Panel value="historial">
-            <Card>
-              <h2 className="text-[1.25rem] font-semibold mb-4 text-[var(--ds-text)]">Historial de Operaciones</h2>
-              <Historial />
-            </Card>
-          </Tabs.Panel>
 
-          <Tabs.Panel value="registrar">
-            <Card className="max-w-2xl mx-auto">
-              <h2 className="text-[1.25rem] font-semibold mb-4 text-[var(--ds-text)]">Nuevo Movimiento</h2>
-              <Registrar />
-            </Card>
-          </Tabs.Panel>
+        {activeTab === "historial" && (
+          <Card>
+            <Historial />
+          </Card>
+        )}
 
-          <Tabs.Panel value="ordenes">
-            <Card>
-              <h2 className="text-[1.25rem] font-semibold mb-4 text-[var(--ds-text)]">Órdenes de Reabastecimiento</h2>
-              <Ordenes />
-            </Card>
-          </Tabs.Panel>
-        </Tabs>
+        {activeTab === "registrar" && (
+          <Card className="max-w-2xl mx-auto">
+            <Registrar />
+          </Card>
+        )}
+
+        {activeTab === "ordenes" && (
+          <Card>
+            <Ordenes />
+          </Card>
+        )}
       </div>
     </div>
   );

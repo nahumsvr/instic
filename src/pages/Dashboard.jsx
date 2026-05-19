@@ -185,6 +185,7 @@ export default function Dashboard() {
         Dashboard
       </Title>
 
+      <div className="flex flex-col gap-4">
       {/* ── KPI Cards ── */}
       <Grid mb="3xl">
         <Grid.Col span={{ base: 12, sm: 4 }}>
@@ -475,6 +476,7 @@ export default function Dashboard() {
           </Card>
         </Grid.Col>
       </Grid>
+      </div>
     </Container>
   );
 }
