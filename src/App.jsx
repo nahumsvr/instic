@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router";
-import LoginPage from "./pages/Login";
 import Movimientos from "./pages/Movements";
-import LoginPage from "./pages/LoginPage";
+import LoginPage from "./pages/Login";
 import InventoryPage from "./pages/MasterInventory";
 
 /**
