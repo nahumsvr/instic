@@ -373,7 +373,7 @@ export default function Dashboard() {
                       severidad === "MEDIO" || severidad === "MEDIUM"
                     ) {
                       isYellow = true;
-                      borderColor = "#F59E0B";
+                      borderColor = "var(--ds-warning-text)";
                     }
 
                     return (
@@ -384,7 +384,12 @@ export default function Dashboard() {
                         p="sm"
                         style={{
                           borderLeft: `4px solid ${borderColor}`,
-                          backgroundColor: "var(--ds-bg)",
+                          backgroundColor: isYellow
+                            ? "var(--ds-warning-bg)"
+                            : "var(--ds-bg)",
+                          borderColor: isYellow
+                            ? "var(--ds-warning-border)"
+                            : undefined,
                         }}
                       >
                         <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -445,18 +450,20 @@ export default function Dashboard() {
                             </Badge>
                           )}
 
-                          {/* Badge "Stock Bajo" — alerta amarilla */}
+                          {/* Badge "Stock Bajo" — alerta de advertencia */}
                           {isYellow && (
-                            <Badge
-                              color="yellow"
-                              variant="light"
-                              size="xs"
-                              style={{ flexShrink: 0 }}
+                            <span
+                              className="inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium border"
+                              style={{
+                                backgroundColor: "var(--ds-surface)",
+                                color: "var(--ds-warning-text)",
+                                borderColor: "var(--ds-warning-border)",
+                              }}
                             >
                               {severidad === "ALTO" || severidad === "HIGH"
                                 ? "Stock Bajo"
                                 : "Stock Medio"}
-                            </Badge>
+                            </span>
                           )}
                         </Group>
                       </Card>

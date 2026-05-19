@@ -122,6 +122,9 @@ code {
   --ds-danger-bg: #FEF2F2;
   --ds-danger-border: #FECACA;
   --ds-danger-text: #B91C1C;
+  --ds-warning-bg: #FFFBEB;
+  --ds-warning-border: #FDE68A;
+  --ds-warning-text: #B45309;
   --ds-sidebar: #FAFAFA;
 }
 
@@ -138,6 +141,9 @@ code {
   --ds-danger-bg: #450A0A;
   --ds-danger-border: #7F1D1D;
   --ds-danger-text: #FCA5A5;
+  --ds-warning-bg: #451A03;
+  --ds-warning-border: #78350F;
+  --ds-warning-text: #FDE047;
   --ds-sidebar: #141414;
 }
 

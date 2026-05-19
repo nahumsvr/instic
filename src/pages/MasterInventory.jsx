@@ -277,7 +277,12 @@ export default function MasterInventory() {
                     </div>
 
                     <div
-                        className="p-6 rounded-lg shadow-sm border border-red-200 bg-red-50 text-red-800 dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-400 flex flex-col justify-center"
+                        className="p-6 rounded-lg shadow-sm border flex flex-col justify-center"
+                        style={{
+                            backgroundColor: "var(--ds-warning-bg)",
+                            borderColor: "var(--ds-warning-border)",
+                            color: "var(--ds-warning-text)",
+                        }}
                     >
                         <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-80">Bajo Stock</p>
                         <p className="text-4xl font-bold">{lowStockCount}</p>
@@ -321,7 +326,10 @@ export default function MasterInventory() {
                                     <Table.Td className="text-[var(--ds-text)] font-medium">{item.nombre}</Table.Td>
                                     <Table.Td className="font-mono text-[var(--ds-text)] text-center">
                                         {!isEmployee ? (
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${item.stock === 0 ? 'text-red-600' : item.stock <= 10 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${item.stock === 0 ? 'text-[var(--ds-danger-text)]' : item.stock <= 10 ? '' : 'text-blue-600 dark:text-blue-400'}`}
+                                                style={item.stock > 0 && item.stock <= 10 ? { color: "var(--ds-warning-text)" } : undefined}
+                                            >
                                                 {item.stock}
                                             </span>
                                         ) : (
@@ -337,7 +345,7 @@ export default function MasterInventory() {
                                                     ● Agotado
                                                 </span>
                                             ) : item.stock <= 10 ? (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A" }}>
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: "var(--ds-warning-bg)", color: "var(--ds-warning-text)", border: "1px solid var(--ds-warning-border)" }}>
                                                     ● Stock Bajo
                                                 </span>
                                             ) : (
