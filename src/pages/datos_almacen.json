@@ -1,0 +1,54 @@
+{
+    "stats": {
+        "completados": 142,
+        "eficiencia": 85,
+        "pendientes": 12
+    },
+    "pedidos": [
+        {
+            "id": "#WH-8829",
+            "fullId": "#WH-8829-X",
+            "status": "En Espera",
+            "origen": "Planta Sur A-1",
+            "items": "24 Unidades",
+            "totalUnidades": "1,450 pzs",
+            "products": [
+                {
+                    "name": "Microcontroladores ARM-v8",
+                    "qty": 800
+                },
+                {
+                    "name": "Sensores Infrarrojos",
+                    "qty": 650
+                }
+            ],
+            "responsable": "Roberto G. Almacén Central",
+            "time": null,
+            "isActive": true
+        },
+        {
+            "id": "#WH-8830",
+            "fullId": "#WH-8830-Y",
+            "status": "Pendiente",
+            "origen": "Suministros Norte",
+            "items": "8 Pallets",
+            "totalUnidades": "8 Pallets",
+            "products": [],
+            "responsable": "Maria V. Logística",
+            "time": "Hace 15 min",
+            "isActive": false
+        },
+        {
+            "id": "#WH-8831",
+            "fullId": "#WH-8831-Z",
+            "status": "Pendiente",
+            "origen": "Puerto Central",
+            "items": "12 Cajas",
+            "totalUnidades": "12 Cajas",
+            "products": [],
+            "responsable": "Juan P. Recepción",
+            "time": "Hace 42 min",
+            "isActive": false
+        }
+    ]
+}
