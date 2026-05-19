@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from "react-router";
+import LoginPage from "./pages/Login";
+import Movimientos from "./pages/Movements";
 import LoginPage from "./pages/LoginPage";
 import InventoryPage from "./pages/MasterInventory";
 
@@ -17,7 +19,7 @@ function App() {
     <Routes>
       {/* Ruta raíz: redirige al login */}
       <Route path="/" element={<Navigate to="/login" replace />} />
-
+      
       {/* Pantalla de login */}
       <Route path="/login" element={<LoginPage />} />
 
@@ -27,6 +29,8 @@ function App() {
       {/* Rutas futuras — descomentar al implementar */}
       {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
       {/* <Route path="/scan" element={<ScanPage />} /> */}
+      {/* nueva ruta para movimientos */}
+      <Route path="/movements" element={<Movimientos />} />
     </Routes>
   );
 }
