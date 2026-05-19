@@ -304,7 +304,7 @@ export default function MobileWarehouse() {
   // UI: Lista de Pedidos
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <Box bg="var(--ds-bg)" style={{ minHeight: "100vh" }}>
+    <Box bg="var(--ds-bg)">
       <Container size="sm" p="md">
         {/* Header */}
         <Group justify="space-between" mb="lg">

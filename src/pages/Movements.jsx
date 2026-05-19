@@ -62,7 +62,7 @@ export default function Movimientos() {
   const [activeTab, setActiveTab] = useState("historial");
 
   return (
-    <div className="min-h-screen bg-[var(--ds-bg)] text-[var(--ds-text)] p-8">
+    <div className="bg-[var(--ds-bg)] text-[var(--ds-text)] p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-8 font-inter tracking-tight">
           Gestión de Movimientos
