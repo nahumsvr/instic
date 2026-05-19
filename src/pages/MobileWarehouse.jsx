@@ -8,6 +8,12 @@ import { toast } from "sonner";
 import { Camera, TriangleExclamation, MapPin, Box as BoxIcon, Check, ArrowRotateLeft } from "@gravity-ui/icons";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
+import {
+  getInitialWarehouseLocation,
+  getLocationIdAndName,
+  setSessionLocation,
+  clearSessionLocation,
+} from "../utils/warehouseLocation";
 
 /** Estados activos que un almacén puede recibir */
 const ACTIVE_STATES = ["PENDING", "APPROVED", "IN_PROGRESS"];
@@ -15,13 +21,9 @@ const ACTIVE_STATES = ["PENDING", "APPROVED", "IN_PROGRESS"];
 export default function MobileWarehouse() {
   const { token } = useAuth();
 
-  // --- Estado de ubicación seleccionada ---
-  const [locationId, setLocationId] = useState(
-    () => localStorage.getItem("warehouse_locationId") || ""
-  );
-  const [locationName, setLocationName] = useState(
-    () => localStorage.getItem("warehouse_locationName") || ""
-  );
+  // --- Estado de ubicación seleccionada (sesión o por defecto desde Configuración) ---
+  const [location, setLocation] = useState(getInitialWarehouseLocation);
+  const { id: locationId, name: locationName } = location;
 
   // --- Ubicaciones disponibles ---
   const [locations, setLocations] = useState([]);
@@ -104,19 +106,14 @@ export default function MobileWarehouse() {
 
   // ─── Seleccionar ubicación ───────────────────────────────────────────────
   const handleSelectLocation = (loc) => {
-    const id = String(loc.id_ubicacion ?? loc.id ?? "");
-    const name = loc.nombre ?? loc.name ?? id;
-    localStorage.setItem("warehouse_locationId", id);
-    localStorage.setItem("warehouse_locationName", name);
-    setLocationId(id);
-    setLocationName(name);
+    const { id, name } = getLocationIdAndName(loc);
+    setSessionLocation(id, name);
+    setLocation({ id, name });
   };
 
   const handleChangeLocation = () => {
-    localStorage.removeItem("warehouse_locationId");
-    localStorage.removeItem("warehouse_locationName");
-    setLocationId("");
-    setLocationName("");
+    clearSessionLocation();
+    setLocation({ id: "", name: "" });
     setOrders([]);
   };
 

@@ -5,6 +5,7 @@ import {
   Boxes3,
   ArrowRightArrowLeft,
   MapPin,
+  Gear,
   ArrowRightFromSquare,
 } from "@gravity-ui/icons";
 import { useAuth } from "../context/AuthContext";
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { label: "Artículos", to: "/inventory", icon: Boxes3 },
   { label: "Movimientos", to: "/movements", icon: ArrowRightArrowLeft },
   { label: "Almacén móvil", to: "/mobile-warehouse", icon: MapPin },
+  { label: "Configuración", to: "/settings", icon: Gear },
 ];
 
 /** Item de navegación del sidebar con estado activo según la ruta actual. */
