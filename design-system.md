@@ -289,7 +289,79 @@ import { Toaster } from "sonner";
 
 ---
 
-### 4.8 Modales
+### 4.8 Selector de secciones (`SectionNav`)
+
+Usar para alternar **vistas dentro de una misma página** (p. ej. Historial / Registrar / Órdenes, o Usuarios / Ubicaciones). **No** usar `Tabs` de Mantine ni `SegmentedControl` para este patrón.
+
+**Referencia de implementación:** `src/components/SectionNav.jsx`
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  [ ícono  Historial ]  [ ícono  Registrar ]  [ ícono  QR ]   │  ← contenedor
+└──────────────────────────────────────────────────────────────┘
+     ▲ activo: acento sólido          inactivo: texto muted
+```
+
+#### Contenedor (`role="tablist"`)
+
+| Propiedad        | Valor                                              |
+| ---------------- | -------------------------------------------------- |
+| Layout           | `flex` · columna en móvil (`flex-col`), fila en `sm+` |
+| Gap interno      | `4px` (`gap-1`)                                    |
+| Padding          | `4px` (`p-1`)                                      |
+| Fondo            | `var(--ds-surface)`                                |
+| Borde            | `1px solid var(--ds-border)`                       |
+| Border-radius    | `8px` (`rounded-lg`)                               |
+| Margen inferior  | `16px` (`mb-4`)                                    |
+
+#### Pestaña / botón (`role="tab"`)
+
+| Estado    | Fondo                    | Texto / ícono              | Borde                          |
+| --------- | ------------------------ | -------------------------- | ------------------------------ |
+| Activo    | `var(--ds-accent)`       | `var(--ds-accent-fg)`      | `1px solid var(--ds-accent)`   |
+| Inactivo  | `transparent`            | `var(--ds-muted)`          | `transparent`                  |
+| Hover     | `var(--ds-bg)`           | `var(--ds-text)`           | `transparent`                  |
+
+- Altura mínima: `42px` · Padding: `8px 16px` · Border-radius del botón: `6px`
+- Tipografía: `0.875rem` / peso `500`
+- Ícono Gravity UI: `16×16px`, a la izquierda del label
+- Transición: `background-color`, `color`, `border-color` — `150ms ease-in-out`
+- Cada pestaña ocupa el mismo ancho (`flex-1`) en desktop
+
+#### Uso en código
+
+```jsx
+import SectionNav from "../components/SectionNav";
+import { Person, MapPin } from "@gravity-ui/icons";
+
+const SECTIONS = [
+  { id: "users", label: "Usuarios", icon: Person },
+  { id: "locations", label: "Ubicaciones", icon: MapPin },
+];
+
+const [activeTab, setActiveTab] = useState("users");
+
+<SectionNav
+  sections={SECTIONS}
+  activeTab={activeTab}
+  onChange={setActiveTab}
+  ariaLabel="Apartados de administración"
+/>;
+
+{activeTab === "users" && (/* contenido */)}
+{activeTab === "locations" && (/* contenido */)}
+```
+
+#### Reglas
+
+1. Máximo **4–5 secciones** por página; si hay más, valorar sub-rutas.
+2. Siempre incluir `ariaLabel` descriptivo en el `tablist`.
+3. El contenido de cada sección se renderiza condicionalmente (`activeTab === id`), no con paneles ocultos de librerías externas.
+4. Reutilizar `SectionNav`; no duplicar estilos inline en cada página.
+
+---
+
+### 4.9 Modales
 
 - Overlay: `rgba(0, 0, 0, 0.4)` con `backdrop-filter: blur(2px)`
 - Card: `#FFFFFF · border-radius: 10px · padding: 32px · max-width: 480px`

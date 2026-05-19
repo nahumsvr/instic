@@ -4,7 +4,6 @@ import {
   Container,
   Title,
   Text,
-  Tabs,
   Table,
   Button,
   Loader,
@@ -23,6 +22,12 @@ import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
 import { getLocationIdAndName } from "../utils/warehouseLocation";
+import SectionNav from "../components/SectionNav";
+
+const ADMIN_SECTIONS = [
+  { id: "users", label: "Usuarios", icon: Person },
+  { id: "locations", label: "Ubicaciones", icon: MapPin },
+];
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Administrador" },
@@ -344,24 +349,15 @@ export default function Administration() {
         </Text>
       </div>
 
-      <Tabs
-        value={activeTab}
-        onChange={(v) => v && setActiveTab(v)}
-        styles={{
-          tab: { color: "var(--ds-muted)", fontWeight: 500 },
-          tabLabel: { fontSize: "0.875rem" },
-        }}
-      >
-        <Tabs.List mb="lg">
-          <Tabs.Tab value="users" leftSection={<Person width={14} height={14} />}>
-            Usuarios
-          </Tabs.Tab>
-          <Tabs.Tab value="locations" leftSection={<MapPin width={14} height={14} />}>
-            Ubicaciones
-          </Tabs.Tab>
-        </Tabs.List>
+      <SectionNav
+        sections={ADMIN_SECTIONS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Apartados de administración"
+      />
 
-        <Tabs.Panel value="users">
+      {activeTab === "users" && (
+        <>
           <div className="flex justify-between items-center mb-4">
             <Text size="sm" style={{ color: "var(--ds-muted)" }}>
               {users.length} usuario{users.length !== 1 ? "s" : ""} registrado{users.length !== 1 ? "s" : ""}
@@ -489,9 +485,11 @@ export default function Administration() {
               </Table>
             )}
           </div>
-        </Tabs.Panel>
+        </>
+      )}
 
-        <Tabs.Panel value="locations">
+      {activeTab === "locations" && (
+        <>
           <div className="flex justify-between items-center mb-4">
             <Text size="sm" style={{ color: "var(--ds-muted)" }}>
               {locations.length} ubicación{locations.length !== 1 ? "es" : ""}
@@ -599,8 +597,8 @@ export default function Administration() {
           <Text size="xs" mt="sm" style={{ color: "var(--ds-subtle)" }}>
             La edición de ubicaciones solo permite actualizar el costo mensual de almacenamiento.
           </Text>
-        </Tabs.Panel>
-      </Tabs>
+        </>
+      )}
 
       <Modal
         opened={userModalOpen}

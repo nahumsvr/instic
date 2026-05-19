@@ -5,6 +5,7 @@ import QRCodeModule from "react-qr-code";
 const QRCode = QRCodeModule.default || QRCodeModule;
 import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
 import { Plus, Clock, FilePlus, QrCode } from "@gravity-ui/icons";
+import SectionNav from "../components/SectionNav";
 
 const SECTIONS = [
   { id: "historial", label: "Historial", title: "Historial de Operaciones", icon: Clock },
@@ -64,40 +65,6 @@ const BadgeStatus = ({ status }) => {
   );
 };
 
-function SectionNav({ activeTab, onChange }) {
-  return (
-    <div
-      role="tablist"
-      aria-label="Apartados de movimientos"
-      className="flex flex-col sm:flex-row gap-1 p-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface)] mb-4"
-    >
-      {SECTIONS.map(({ id, label, icon: Icon }) => {
-        const isActive = activeTab === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onChange(id)}
-            className={[
-              "flex flex-1 items-center justify-center gap-2 min-h-[42px] px-4 py-2 rounded-md text-sm font-medium",
-              "transition-[background-color,color,border-color] duration-150 ease-in-out",
-              "border cursor-pointer",
-              isActive
-                ? "bg-[var(--ds-accent)] text-[var(--ds-accent-fg)] border-[var(--ds-accent)]"
-                : "bg-transparent text-[var(--ds-muted)] border-transparent hover:bg-[var(--ds-bg)] hover:text-[var(--ds-text)]",
-            ].join(" ")}
-          >
-            <Icon width={16} height={16} aria-hidden />
-            <span>{label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function Movimientos() {
   const [activeTab, setActiveTab] = useState("historial");
 
@@ -108,7 +75,12 @@ export default function Movimientos() {
           Gestión de Movimientos
         </h1>
 
-        <SectionNav activeTab={activeTab} onChange={setActiveTab} />
+        <SectionNav
+          sections={SECTIONS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="Apartados de movimientos"
+        />
 
 
         {activeTab === "historial" && (
