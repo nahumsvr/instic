@@ -1,82 +1,104 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Table, TextInput, Select, Button, Loader, Alert, Modal, NumberInput, Group } from "@mantine/core";
 import { Magnifier, Plus, Pencil } from "@gravity-ui/icons";
 import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config/api";
+import { useDebouncedValue } from "@mantine/hooks";
 
 export default function MasterInventory() {
+    const { user, token } = useAuth();
+    const isEmployee = user?.rol === "empleado" || user?.rol === "employee" || (!user?.rol);
+
     const [data, setData] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const [search, setSearch] = useState("");
-    const [storeFilter, setStoreFilter] = useState("Todas");
+    const [debouncedSearch] = useDebouncedValue(search, 400);
+    const [storeFilter, setStoreFilter] = useState("");
 
     // Modal form state
     const [opened, setOpened] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [editingId, setEditingId] = useState(null); // null = Modo Creación, string = Modo Edición
+    const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
-        id: "",
+        code: "",
         name: "",
-        stock: 0,
-        location: "Centro",
-        cost: 0,
-        price: 0,
+        category: "General",
+        size: "N/A",
+        unitCost: 0,
+        unitPrice: 0,
     });
 
-    // Rol simulado: "admin" o "empleado"
-    const role = "empleado"; // Cambiar a "empleado" para probar
-    const isEmployee = role === "empleado";
+    const fetchLocations = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/locations`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Error al cargar ubicaciones");
+            const locs = await res.json();
+            setLocations(locs);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    }, [token]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            // Simulamos el tiempo de una petición real
-            await new Promise((resolve) => setTimeout(resolve, 600));
+            const query = new URLSearchParams();
+            query.append("status", "active");
+            if (debouncedSearch) query.append("search", debouncedSearch);
+            if (storeFilter) query.append("locationId", storeFilter);
 
-            const storedData = localStorage.getItem("instic_inventory");
-            if (storedData) {
-                setData(JSON.parse(storedData));
-            } else {
-                // Si no hay datos, inicializamos con algunos de ejemplo
-                const initial = [
-                    { id: "P001", name: "Playera Negra", stock: 15, location: "Centro", cost: 120, price: 250 },
-                    { id: "P002", name: "Sudadera Gris", stock: 8, location: "Norte", cost: 220, price: 450 },
-                    { id: "P003", name: "Jeans Azul", stock: 45, location: "Sur", cost: 300, price: 600 },
-                    { id: "P004", name: "Chaqueta Cortavientos", stock: 0, location: "Centro", cost: 150, price: 300 },
-                ];
-                localStorage.setItem("instic_inventory", JSON.stringify(initial));
-                setData(initial);
-            }
+            const res = await fetch(`${API_BASE_URL}/articles?${query.toString()}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+            const json = await res.json();
+            setData(json);
         } catch (err) {
             setError(err.message);
             toast.error("Error al cargar el inventario");
         } finally {
             setLoading(false);
         }
-    };
+    }, [debouncedSearch, storeFilter, token]);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (token) fetchLocations();
+    }, [fetchLocations, token]);
+
+    useEffect(() => {
+        if (token) fetchData();
+    }, [fetchData, token]);
 
     const handleNew = () => {
         setEditingId(null);
         setFormData({
-            id: "",
+            code: "",
             name: "",
-            stock: 0,
-            location: "Centro",
-            cost: 0,
-            price: 0,
+            category: "General", // Default value
+            size: "N/A", // Default value
+            unitCost: 0,
+            unitPrice: 0,
         });
         setOpened(true);
     };
 
     const handleEdit = (item) => {
-        setEditingId(item.id);
-        setFormData({ ...item });
+        setEditingId(item.id_articulo);
+        setFormData({
+            code: item.codigo,
+            name: item.nombre,
+            category: item.category || "General",
+            size: item.size || "N/A",
+            unitCost: item.costo_unitario || 0,
+            unitPrice: item.precio_unitario || 0,
+        });
         setOpened(true);
     };
 
@@ -84,11 +106,14 @@ export default function MasterInventory() {
         if (!editingId) return;
         setSaving(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 600));
-            const storedData = localStorage.getItem("instic_inventory");
-            let currentData = storedData ? JSON.parse(storedData) : [];
-            currentData = currentData.filter((item) => item.id !== editingId);
-            localStorage.setItem("instic_inventory", JSON.stringify(currentData));
+            const res = await fetch(`${API_BASE_URL}/articles/${editingId}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body?.message || "Error al eliminar el artículo");
+            }
             toast.success("Artículo eliminado correctamente");
             setOpened(false);
             fetchData();
@@ -100,36 +125,36 @@ export default function MasterInventory() {
     };
 
     const handleSave = async () => {
-        if (!formData.id || !formData.name) {
+        if (!formData.code || !formData.name) {
             toast.error("El código y la prenda son obligatorios");
             return;
         }
 
         setSaving(true);
         try {
-            // Simulamos el tiempo de una petición real
-            await new Promise((resolve) => setTimeout(resolve, 800));
+            const isEdit = !!editingId;
+            const url = isEdit ? `${API_BASE_URL}/articles/${editingId}` : `${API_BASE_URL}/articles`;
+            const method = isEdit ? "PATCH" : "POST";
 
-            const storedData = localStorage.getItem("instic_inventory");
-            let currentData = storedData ? JSON.parse(storedData) : [];
+            const payload = { ...formData };
+            
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload),
+            });
 
-            if (editingId) {
-                // Modo Edición
-                currentData = currentData.map((item) => (item.id === editingId ? formData : item));
-                toast.success("Artículo actualizado correctamente");
-            } else {
-                // Modo Creación
-                if (currentData.some((item) => item.id === formData.id)) {
-                    throw new Error("Ya existe un artículo con este código");
-                }
-                currentData = [...currentData, formData];
-                toast.success("Artículo agregado correctamente");
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body?.message || "Error al guardar el artículo");
             }
 
-            localStorage.setItem("instic_inventory", JSON.stringify(currentData));
-
+            toast.success(isEdit ? "Artículo actualizado correctamente" : "Artículo creado correctamente");
             setOpened(false);
-            fetchData(); // Recargar datos
+            fetchData();
         } catch (err) {
             toast.error(`Error al guardar: ${err.message}`);
         } finally {
@@ -137,17 +162,18 @@ export default function MasterInventory() {
         }
     };
 
-    const filteredData = data.filter((item) => {
-        const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
-            item.id.toLowerCase().includes(search.toLowerCase());
-        const matchesStore = storeFilter === "Todas" || item.location === storeFilter;
-        return matchesSearch && matchesStore;
-    });
-
     // Cálculos para tarjetas de resumen
-    const totalItems = filteredData.length;
-    const totalValue = filteredData.reduce((acc, item) => acc + (item.stock * item.cost), 0);
-    const lowStockCount = filteredData.filter(item => item.stock <= 10).length;
+    const totalItems = data.length;
+    const totalValue = data.reduce((acc, item) => acc + (item.stock * (item.costo_unitario || 0)), 0);
+    const lowStockCount = data.filter(item => item.stock <= 10).length;
+
+    const getTiendaLabel = () => {
+        if (!storeFilter) return "Consolidado";
+        const loc = locations.find(l => l.id_ubicacion.toString() === storeFilter);
+        return loc ? loc.nombre : "Consolidado";
+    };
+
+    const mostrarColumnasFinancieras = data.length > 0 ? data[0].costo_unitario !== undefined : !isEmployee;
 
     if (loading && data.length === 0) {
         return (
@@ -209,8 +235,14 @@ export default function MasterInventory() {
                     <label className="block text-xs font-medium text-[var(--ds-muted)] mb-1">Filtrar por Tienda</label>
                     <Select
                         value={storeFilter}
-                        onChange={(val) => setStoreFilter(val || "Todas")}
-                        data={["Todas", "Centro", "Norte", "Sur"]}
+                        onChange={(val) => setStoreFilter(val || "")}
+                        data={[
+                            { value: "", label: "Todas las tiendas" },
+                            ...locations.map(loc => ({
+                                value: loc.id_ubicacion.toString(),
+                                label: loc.nombre
+                            }))
+                        ]}
                         styles={{
                             input: {
                                 backgroundColor: "var(--ds-bg)",
@@ -222,7 +254,7 @@ export default function MasterInventory() {
                 </div>
             </div>
 
-            {!isEmployee && (
+            {!isEmployee && mostrarColumnasFinancieras && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div
                         className="p-6 rounded-lg shadow-sm flex flex-col justify-center"
@@ -262,7 +294,7 @@ export default function MasterInventory() {
                                 <Table.Th className="text-[var(--ds-muted)] font-semibold uppercase tracking-wider text-xs text-center">Estado</Table.Th>
                             )}
 
-                            {!isEmployee && (
+                            {!isEmployee && mostrarColumnasFinancieras && (
                                 <>
                                     <Table.Th className="text-[var(--ds-muted)] font-semibold uppercase tracking-wider text-xs">Costo</Table.Th>
                                     <Table.Th className="text-[var(--ds-muted)] font-semibold uppercase tracking-wider text-xs">Precio</Table.Th>
@@ -272,17 +304,17 @@ export default function MasterInventory() {
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                        {loading && data.length > 0 ? (
+                        {loading && data.length === 0 ? (
                             <Table.Tr>
                                 <Table.Td colSpan={isEmployee ? 5 : 7} className="text-center py-12">
                                     <Loader color="gray" size="sm" className="mx-auto" />
                                 </Table.Td>
                             </Table.Tr>
-                        ) : filteredData.length > 0 ? (
-                            filteredData.map((item) => (
-                                <Table.Tr key={item.id} className="border-t border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors">
-                                    <Table.Td className="font-mono text-[var(--ds-text)] text-sm font-medium">{item.id}</Table.Td>
-                                    <Table.Td className="text-[var(--ds-text)] font-medium">{item.name}</Table.Td>
+                        ) : data.length > 0 ? (
+                            data.map((item) => (
+                                <Table.Tr key={item.id_articulo} className="border-t border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors">
+                                    <Table.Td className="font-mono text-[var(--ds-text)] text-sm font-medium">{item.codigo}</Table.Td>
+                                    <Table.Td className="text-[var(--ds-text)] font-medium">{item.nombre}</Table.Td>
                                     <Table.Td className="font-mono text-[var(--ds-text)] text-center">
                                         {!isEmployee ? (
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${item.stock === 0 ? 'text-red-600' : item.stock <= 10 ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>
@@ -292,7 +324,7 @@ export default function MasterInventory() {
                                             <span className="text-[var(--ds-text)] text-sm font-semibold">{item.stock} unidades</span>
                                         )}
                                     </Table.Td>
-                                    <Table.Td className="text-[var(--ds-text)] text-sm">{item.location}</Table.Td>
+                                    <Table.Td className="text-[var(--ds-text)] text-sm">{getTiendaLabel()}</Table.Td>
 
                                     {isEmployee && (
                                         <Table.Td className="text-center">
@@ -312,10 +344,10 @@ export default function MasterInventory() {
                                         </Table.Td>
                                     )}
 
-                                    {!isEmployee && (
+                                    {!isEmployee && mostrarColumnasFinancieras && (
                                         <>
-                                            <Table.Td className="font-mono text-[var(--ds-text)] text-sm">${Number(item.cost).toFixed(2)}</Table.Td>
-                                            <Table.Td className="font-mono text-[var(--ds-text)] text-sm font-semibold">${Number(item.price).toFixed(2)}</Table.Td>
+                                            <Table.Td className="font-mono text-[var(--ds-text)] text-sm">${Number(item.costo_unitario).toFixed(2)}</Table.Td>
+                                            <Table.Td className="font-mono text-[var(--ds-text)] text-sm font-semibold">${Number(item.precio_unitario).toFixed(2)}</Table.Td>
                                             <Table.Td className="text-center">
                                                 <Button
                                                     variant="subtle"
@@ -378,8 +410,8 @@ export default function MasterInventory() {
                         placeholder="Ej. P004"
                         required
                         disabled={!!editingId} // No permitir cambiar ID en modo edición
-                        value={formData.id}
-                        onChange={(e) => setFormData({ ...formData, id: e.currentTarget.value })}
+                        value={formData.code}
+                        onChange={(e) => setFormData({ ...formData, code: e.currentTarget.value })}
                         styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)", opacity: editingId ? 0.7 : 1 } }}
                     />
                     <TextInput
@@ -390,28 +422,14 @@ export default function MasterInventory() {
                         onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
                         styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
                     />
-                    <Select
-                        label="Tienda"
-                        data={["Centro", "Norte", "Sur"]}
-                        value={formData.location}
-                        onChange={(val) => setFormData({ ...formData, location: val })}
-                        styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
-                    />
-                    <NumberInput
-                        label="Stock Actual"
-                        min={0}
-                        value={formData.stock}
-                        onChange={(val) => setFormData({ ...formData, stock: val })}
-                        styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
-                    />
                     <div className="flex gap-4">
                         <NumberInput
                             label="Costo"
                             prefix="$"
                             min={0}
                             className="flex-1"
-                            value={formData.cost}
-                            onChange={(val) => setFormData({ ...formData, cost: val })}
+                            value={formData.unitCost}
+                            onChange={(val) => setFormData({ ...formData, unitCost: val })}
                             styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
                         />
                         <NumberInput
@@ -419,8 +437,8 @@ export default function MasterInventory() {
                             prefix="$"
                             min={0}
                             className="flex-1"
-                            value={formData.price}
-                            onChange={(val) => setFormData({ ...formData, price: val })}
+                            value={formData.unitPrice}
+                            onChange={(val) => setFormData({ ...formData, unitPrice: val })}
                             styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
                         />
                     </div>
