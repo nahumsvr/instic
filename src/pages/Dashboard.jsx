@@ -14,7 +14,8 @@ import {
 } from "recharts";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = "http://localhost:3000";
+const API_URL = await import.meta.env.VITE_API_BASE_URL;
+console.log(API_URL);
 
 /** Estados activos de una orden que "pausa" visualmente una alerta roja → borde azul */
 const ACTIVE_ORDER_STATUSES = ["PENDING", "APPROVED", "IN_PROGRESS"];
