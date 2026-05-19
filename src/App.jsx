@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router";
 import Movimientos from "./pages/Movements";
 import LoginPage from "./pages/Login";
 import InventoryPage from "./pages/MasterInventory";
+import DashboardPage from "./pages/Dashboard";
 
 /**
  * Enrutador principal de la aplicación.
@@ -25,8 +26,10 @@ function App() {
       {/* Pantalla de Inventario Maestro*/}
       <Route path="/inventory" element={<InventoryPage />} />
 
+      {/* Pantalla de Dashboard */}
+      <Route path="/dashboard" element={<DashboardPage />} />
+
       {/* Rutas futuras — descomentar al implementar */}
-      {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
       {/* <Route path="/scan" element={<ScanPage />} /> */}
       {/* nueva ruta para movimientos */}
       <Route path="/movements" element={<Movimientos />} />
