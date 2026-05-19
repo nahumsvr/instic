@@ -78,8 +78,12 @@ export default function MasterInventory() {
 
     const handleNew = () => {
         setEditingId(null);
+        
+        // Generar un código aleatorio, ej: ART-8492
+        const randomCode = `ART-${Math.floor(1000 + Math.random() * 9000)}`;
+        
         setFormData({
-            code: "",
+            code: randomCode,
             name: "",
             category: "General", // Default value
             size: "N/A", // Default value
