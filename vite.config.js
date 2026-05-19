@@ -8,4 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true, // expone en 0.0.0.0 → accesible desde la red local
+  },
 })

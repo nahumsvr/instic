@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate } from "react-router";
 import Movimientos from "./pages/Movements";
-import LoginPage from "./pages/LoginPage";
+import LoginPage from "./pages/Login";
 import InventoryPage from "./pages/MasterInventory";
+import MobileWarehouse from "./pages/MobileWarehouse";
 
 /**
  * Enrutador principal de la aplicación.
@@ -30,6 +31,9 @@ function App() {
       {/* <Route path="/scan" element={<ScanPage />} /> */}
       {/* nueva ruta para movimientos */}
       <Route path="/movements" element={<Movimientos />} />
+
+      {/* Vista móvil para almacén */}
+      <Route path="/mobile-warehouse" element={<MobileWarehouse />} />
     </Routes>
   );
 }
