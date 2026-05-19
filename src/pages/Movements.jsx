@@ -35,8 +35,8 @@ const ButtonSecondary = ({ children, className = "", ...props }) => (
 );
 
 const ButtonDanger = ({ children, className = "", ...props }) => (
-  <button 
-    className={`bg-transparent text-[#B91C1C] hover:bg-[#FEF2F2] border border-[#FECACA] rounded-[6px] px-4 h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
+  <button
+    className={`bg-[var(--ds-danger-bg)] text-[var(--ds-danger-text)] border border-[var(--ds-danger-border)] hover:opacity-90 rounded-[6px] px-4 h-[38px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
     {...props}
   >
     {children}
