@@ -89,6 +89,11 @@ function locationTypeLabel(type) {
   return LOCATION_TYPE_OPTIONS.find((t) => t.value === type)?.label ?? type;
 }
 
+/** Genera un código aleatorio para nueva ubicación, ej: UBI-8492 */
+function generateLocationCode() {
+  return `UBI-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
 /** Pantalla de administración: usuarios y ubicaciones (solo ADMIN). */
 export default function Administration() {
   const { user, token } = useAuth();
@@ -261,7 +266,7 @@ export default function Administration() {
   const openNewLocation = () => {
     setEditingLocationId(null);
     setLocationForm({
-      codigo_ubicacion: "",
+      codigo_ubicacion: generateLocationCode(),
       nombre: "",
       tipo_ubicacion: "TIENDA",
       costo_almacenamiento_mensual: 0,
