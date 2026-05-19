@@ -5,6 +5,7 @@ import InventoryPage from "./pages/MasterInventory";
 import MobileWarehouse from "./pages/MobileWarehouse";
 import DashboardPage from "./pages/Dashboard";
 import SettingsPage from "./pages/Settings";
+import AdministrationPage from "./pages/Administration";
 import AppLayout from "./layouts/AppLayout";
 
 /**
@@ -24,6 +25,7 @@ function App() {
         <Route path="/movements" element={<Movimientos />} />
         <Route path="/mobile-warehouse" element={<MobileWarehouse />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/admin" element={<AdministrationPage />} />
       </Route>
     </Routes>
   );

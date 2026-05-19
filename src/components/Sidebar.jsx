@@ -6,6 +6,7 @@ import {
   ArrowRightArrowLeft,
   MapPin,
   Gear,
+  Shield,
   ArrowRightFromSquare,
 } from "@gravity-ui/icons";
 import { useAuth } from "../context/AuthContext";
@@ -45,9 +46,19 @@ function NavItem({ to, icon: Icon, label, end = false }) {
  * Menú lateral de navegación entre pantallas autenticadas.
  * Visible en desktop (md+); oculto en móvil para no interferir con vistas móviles.
  */
+function isAdmin(user) {
+  const rol = user?.rol ?? user?.role ?? "";
+  return rol === "ADMIN" || rol === "admin";
+}
+
 export default function Sidebar() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  const navItems = [
+    ...NAV_ITEMS,
+    ...(isAdmin(user) ? [{ label: "Administración", to: "/admin", icon: Shield }] : []),
+  ];
 
   const handleLogout = () => {
     logout();
@@ -75,7 +86,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-1 flex-1">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavItem key={item.to} {...item} />
         ))}
       </nav>
