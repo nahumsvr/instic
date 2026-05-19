@@ -6,7 +6,7 @@ const QRCode = QRCodeModule.default || QRCodeModule;
 import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
 import { Plus, Xmark, Check, TrashBin } from "@gravity-ui/icons";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = await import.meta.env.VITE_API_BASE_URL;
 const getToken = () => localStorage.getItem("instic_token") || "";
 
 // Custom UI Components matching Design System
