@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router";
 import LoginPage from "./pages/LoginPage";
+import InventoryPage from "./pages/MasterInventory";
 
 /**
  * Enrutador principal de la aplicación.
@@ -19,6 +20,9 @@ function App() {
 
       {/* Pantalla de login */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Pantalla de Inventario Maestro*/}
+      <Route path="/inventory" element={<InventoryPage />} />
 
       {/* Rutas futuras — descomentar al implementar */}
       {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
