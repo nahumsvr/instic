@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Select, NumberInput, Loader, Group, Modal, Tooltip } from "@mantine/core";
+import { useState, useEffect } from "react";
+import { Select, NumberInput, Loader, Group, Modal, Tooltip, TextInput } from "@mantine/core";
 import { toast } from "sonner";
 import QRCodeModule from "react-qr-code";
 const QRCode = QRCodeModule.default || QRCodeModule;
-import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
+import QrScanner from "../components/QrScanner";
 import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
 
@@ -51,7 +51,7 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 );
 
 const BadgeStatus = ({ status }) => {
-  let style = {};
+  let style;
   let dot = false;
 
   if (status === 'COMPLETED') {
@@ -439,6 +439,7 @@ function Ordenes() {
   const [generatedQr, setGeneratedQr] = useState("");
   const [generatedOrder, setGeneratedOrder] = useState(null); // respuesta completa de la orden creada
   const [scannerOpened, setScannerOpened] = useState(false);
+  const [manualCode, setManualCode] = useState("");
   const [scannedOrder, setScannedOrder] = useState(null);
 
   const [formData, setFormData] = useState({ articleId: '', quantity: 1, originId: '', destinationId: '' });
@@ -515,12 +516,12 @@ function Ordenes() {
     }
   };
 
-  const handleScan = async (result) => {
-    if (!result || !result.text) return;
+  const processScannedCode = async (code) => {
+    if (!code?.trim()) return;
     setScannerOpened(false);
     try {
-      const code = result.text.split('/').pop();
-      const res = await fetch(`${API_URL}/orders/${code}`, {
+      const cleanCode = code.trim().split('/').pop();
+      const res = await fetch(`${API_URL}/orders/${cleanCode}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       if (!res.ok) throw new Error("Orden no encontrada o inválida");
@@ -531,8 +532,8 @@ function Ordenes() {
   };
 
   const handleAdvanceState = async (id, currentStatus) => {
-    let nextStatus = '';
-    let payload = {};
+    let nextStatus;
+    let payload;
     if (currentStatus === 'PENDING') {
       nextStatus = 'APPROVED';
       const eta = prompt("Ingresa el ETA (días estimados):", "3");
@@ -638,7 +639,7 @@ function Ordenes() {
           </div>
         </div>
         <div class="footer">Generado por Instic · ${order.createdAt}</div>
-        <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };<\/script>
+        <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };</script>
       </body>
       </html>
     `);
@@ -679,7 +680,7 @@ function Ordenes() {
   return (
     <div>
       <Group justify="space-between" mb="lg">
-        <ButtonSecondary onClick={() => setScannerOpened(true)}>
+        <ButtonSecondary onClick={() => { setScannerOpened(true); setManualCode(""); }}>
           Escanear QR
         </ButtonSecondary>
         <ButtonPrimary onClick={() => setModalOpened(true)}>
@@ -831,9 +832,57 @@ function Ordenes() {
         )}
       </Modal>
 
-      <Modal opened={scannerOpened} onClose={() => setScannerOpened(false)} title="Escanear QR de Orden" size="lg">
-        <div className="overflow-hidden rounded-lg bg-[var(--ds-bg)] flex justify-center p-4">
-          <BarcodeScanner onUpdate={handleScan} />
+      <Modal 
+        opened={scannerOpened} 
+        onClose={() => setScannerOpened(false)} 
+        title="Escanear QR de Orden" 
+        size="md"
+        styles={{
+          content: { backgroundColor: "var(--ds-surface)" },
+          header: { backgroundColor: "var(--ds-surface)" },
+        }}
+      >
+        <div className="flex flex-col gap-4">
+          <div
+            className="w-full h-[280px] rounded-lg overflow-hidden relative border border-[var(--ds-border)] bg-[var(--ds-bg)]"
+          >
+            {scannerOpened && (
+              <QrScanner
+                onScan={processScannedCode}
+                onError={() => toast.error("Error al acceder a la cámara. Verifica los permisos del navegador.")}
+                width="100%"
+                height="100%"
+              />
+            )}
+          </div>
+
+          <div className="text-[var(--ds-muted)] text-sm text-center">
+            O ingresa el código manualmente:
+          </div>
+
+          <div className="flex gap-2">
+            <TextInput
+              placeholder="Ej. ORD-123456"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && processScannedCode(manualCode)
+              }
+              style={{ flex: 1 }}
+              styles={{
+                input: {
+                  backgroundColor: "var(--ds-bg)",
+                  borderColor: "var(--ds-border)",
+                  color: "var(--ds-text)",
+                },
+              }}
+            />
+            <ButtonPrimary
+              onClick={() => processScannedCode(manualCode)}
+            >
+              Validar
+            </ButtonPrimary>
+          </div>
         </div>
       </Modal>
 

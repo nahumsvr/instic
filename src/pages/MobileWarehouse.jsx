@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Container, Card, Text, Button, Badge, Drawer,
+  Container, Card, Text, Button, Drawer, Modal,
   TextInput, Stack, Group, Title, Loader, Alert, Box
 } from "@mantine/core";
 import QrScanner from "../components/QrScanner";
@@ -19,7 +19,7 @@ import {
 const ACTIVE_STATES = ["PENDING", "APPROVED", "IN_PROGRESS"];
 
 const BadgeStatus = ({ status }) => {
-  let style = {};
+  let style;
   let dot = false;
   const s = String(status || '').toUpperCase();
 
@@ -96,13 +96,6 @@ export default function MobileWarehouse() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  useEffect(() => {
-    if (!locationId) {
-      fetchLocations();
-    } else {
-      fetchOrders();
-    }
-  }, [locationId]); // eslint-disable-line
 
   // ─── Fetch: Ubicaciones ──────────────────────────────────────────────────
   const fetchLocations = async () => {
@@ -153,6 +146,14 @@ export default function MobileWarehouse() {
       setLoadingOrders(false);
     }
   };
+
+  useEffect(() => {
+    if (!locationId) {
+      fetchLocations();
+    } else {
+      fetchOrders();
+    }
+  }, [locationId]); // eslint-disable-line
 
   // ─── Seleccionar ubicación ───────────────────────────────────────────────
   const handleSelectLocation = (loc) => {
@@ -497,33 +498,23 @@ export default function MobileWarehouse() {
       </Container>
 
       {/* ── Scanner Drawer ─────────────────────────────────────────────── */}
-      <Drawer
+      <Modal
         opened={scannerOpen}
         onClose={() => setScannerOpen(false)}
-        position="bottom"
-        size="90%"
         title={
           <Text fw={600} style={{ color: "var(--ds-text)" }}>
-            Escanear Pedido #
-            {pendingOrder?.id_orden ?? pendingOrder?.id}
+            Escanear Pedido #{pendingOrder?.id_orden ?? pendingOrder?.id}
           </Text>
         }
+        size="md"
         styles={{
           content: { backgroundColor: "var(--ds-surface)" },
           header: { backgroundColor: "var(--ds-surface)" },
         }}
       >
-        <Stack gap="lg" align="center">
-          <Box
-            w="100%"
-            h={280}
-            style={{
-              borderRadius: "8px",
-              overflow: "hidden",
-              position: "relative",
-              border: "1px solid var(--ds-border)",
-              backgroundColor: "var(--ds-bg)",
-            }}
+        <div className="flex flex-col gap-4">
+          <div
+            className="w-full h-[280px] rounded-lg overflow-hidden relative border border-[var(--ds-border)] bg-[var(--ds-bg)]"
           >
             {scannerOpen && (
               <QrScanner
@@ -533,13 +524,13 @@ export default function MobileWarehouse() {
                 height="100%"
               />
             )}
-          </Box>
+          </div>
 
-          <Text c="dimmed" size="sm">
+          <Text c="dimmed" size="sm" ta="center">
             O ingresa el código manualmente:
           </Text>
 
-          <Group w="100%">
+          <div className="flex gap-2">
             <TextInput
               placeholder={`Ej. ${pendingOrder?.id_orden ?? pendingOrder?.id ?? "123"}`}
               value={manualCode}
@@ -565,9 +556,9 @@ export default function MobileWarehouse() {
             >
               Validar
             </Button>
-          </Group>
-        </Stack>
-      </Drawer>
+          </div>
+        </div>
+      </Modal>
 
       {/* ── Detalle y Confirmar Drawer ─────────────────────────────────── */}
       <Drawer
