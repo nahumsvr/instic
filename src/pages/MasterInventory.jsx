@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Table, TextInput, Select, Button, Loader, Alert, Modal, NumberInput, Group } from "@mantine/core";
-import { Magnifier, Plus, Pencil } from "@gravity-ui/icons";
+import { Magnifier, Plus, Pencil, Boxes3, CircleDollar, CircleInfo } from "@gravity-ui/icons";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
@@ -8,7 +8,7 @@ import { useDebouncedValue } from "@mantine/hooks";
 
 export default function MasterInventory() {
     const { user, token } = useAuth();
-    const isEmployee = user?.rol === "empleado" || user?.rol === "employee" || (!user?.rol);
+    const isEmployee = user?.rol === "EMPLOYEE" || user?.rol === "EMPLOYEE" || (!user?.rol);
 
     const [data, setData] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -78,10 +78,10 @@ export default function MasterInventory() {
 
     const handleNew = () => {
         setEditingId(null);
-        
+
         // Generar un código aleatorio, ej: ART-8492
         const randomCode = `ART-${Math.floor(1000 + Math.random() * 9000)}`;
-        
+
         setFormData({
             code: randomCode,
             name: "",
@@ -141,7 +141,7 @@ export default function MasterInventory() {
             const method = isEdit ? "PATCH" : "POST";
 
             const payload = { ...formData };
-            
+
             const res = await fetch(url, {
                 method,
                 headers: {
@@ -197,18 +197,27 @@ export default function MasterInventory() {
                     </p>
                 </div>
                 {!isEmployee && (
-                    <Button
-                        leftSection={<Plus width={16} height={16} />}
-                        style={{
-                            backgroundColor: "var(--ds-accent)",
-                            color: "var(--ds-accent-fg)",
-                        }}
-                        radius="md"
+                    <button
                         onClick={handleNew}
-                        className="transition-transform active:scale-95 shadow-sm hover:shadow-md"
+                        className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+                        style={{
+                            border: "1px solid rgba(14, 165, 233, 0.5)",
+                            background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)",
+                            color: "rgba(14, 165, 233, 1)",
+                            boxShadow: "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)",
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.08) 100%), var(--ds-surface)";
+                            e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.15), 0 4px 16px rgba(14, 165, 233, 0.25)";
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)";
+                            e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)";
+                        }}
                     >
+                        <Plus width={16} height={16} />
                         Nuevo Artículo
-                    </Button>
+                    </button>
                 )}
             </div>
 
@@ -259,33 +268,56 @@ export default function MasterInventory() {
             </div>
 
             {!isEmployee && mostrarColumnasFinancieras && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {/* Total Items */}
                     <div
-                        className="p-6 rounded-lg shadow-sm flex flex-col justify-center"
-                        style={{ backgroundColor: "var(--ds-accent)", color: "var(--ds-accent-fg)" }}
-                    >
-                        <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-80">Total Items</p>
-                        <p className="text-4xl font-bold">{totalItems}</p>
-                    </div>
-
-                    <div
-                        className="p-6 rounded-lg shadow-sm border flex flex-col justify-center"
-                        style={{ backgroundColor: "var(--ds-surface)", borderColor: "var(--ds-border)", color: "var(--ds-text)" }}
-                    >
-                        <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-60">Valor Total Almacén</p>
-                        <p className="text-4xl font-bold">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-
-                    <div
-                        className="p-6 rounded-lg shadow-sm border flex flex-col justify-center"
+                        className="p-6 rounded-2xl shadow-sm flex flex-col justify-between relative overflow-hidden h-[120px]"
                         style={{
-                            backgroundColor: "var(--ds-warning-bg)",
-                            borderColor: "var(--ds-warning-border)",
-                            color: "var(--ds-warning-text)",
+                            border: "1px solid rgba(99, 102, 241, 0.4)",
+                            background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
                         }}
                     >
-                        <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-80">Bajo Stock</p>
-                        <p className="text-4xl font-bold">{lowStockCount}</p>
+                        <div className="absolute right-4 bottom-2 opacity-20" style={{ color: "#6366F1" }}>
+                            <Boxes3 width={72} height={72} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--ds-muted)" }}>Total Items</p>
+                            <p className="text-3xl font-bold font-mono" style={{ color: "var(--ds-text)" }}>{totalItems}</p>
+                        </div>
+                    </div>
+
+                    {/* Valor Total Almacén */}
+                    <div
+                        className="p-6 rounded-2xl shadow-sm flex flex-col justify-between relative overflow-hidden h-[120px]"
+                        style={{
+                            border: "1px solid rgba(14, 165, 233, 0.4)",
+                            background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
+                        }}
+                    >
+                        <div className="absolute right-4 bottom-2 opacity-20" style={{ color: "#0EA5E9" }}>
+                            <CircleDollar width={72} height={72} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--ds-muted)" }}>Valor Total Almacén</p>
+                            <p className="text-3xl font-bold font-mono" style={{ color: "var(--ds-text)" }}>${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                    </div>
+
+                    {/* Bajo Stock */}
+                    <div
+                        className="p-6 rounded-2xl shadow-sm flex flex-col justify-between relative overflow-hidden h-[120px]"
+                        style={{
+                            border: "1px solid rgba(244, 63, 94, 0.4)",
+                            background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
+                        }}
+                    >
+                        <div className="absolute right-4 bottom-2 opacity-20" style={{ color: "#F43F5E" }}>
+                            <CircleInfo width={72} height={72} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--ds-muted)" }}>Bajo Stock</p>
+                            <p className="text-3xl font-bold font-mono" style={{ color: "var(--ds-text)" }}>{lowStockCount}</p>
+                        </div>
                     </div>
                 </div>
             )}
@@ -324,7 +356,7 @@ export default function MasterInventory() {
                                 <Table.Tr key={item.id_articulo} className="border-t border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors">
                                     <Table.Td className="font-mono text-[var(--ds-text)] text-sm font-medium">{item.codigo}</Table.Td>
                                     <Table.Td className="text-[var(--ds-text)] font-medium">{item.nombre}</Table.Td>
-                                    <Table.Td className="font-mono text-[var(--ds-text)] text-center">
+                                    <Table.Td className="font-mono text-center">
                                         {!isEmployee ? (
                                             <span
                                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${item.stock === 0 ? 'text-[var(--ds-danger-text)]' : item.stock <= 10 ? '' : 'text-blue-600 dark:text-blue-400'}`}
@@ -341,15 +373,36 @@ export default function MasterInventory() {
                                     {isEmployee && (
                                         <Table.Td className="text-center">
                                             {item.stock === 0 ? (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA" }}>
+                                                <span 
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                                    style={{
+                                                        border: "1px solid rgba(244, 63, 94, 0.4)",
+                                                        background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%)",
+                                                        color: "var(--ds-danger-text)",
+                                                    }}
+                                                >
                                                     ● Agotado
                                                 </span>
                                             ) : item.stock <= 10 ? (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: "var(--ds-warning-bg)", color: "var(--ds-warning-text)", border: "1px solid var(--ds-warning-border)" }}>
+                                                <span 
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                                    style={{
+                                                        border: "1px solid rgba(245, 158, 11, 0.4)",
+                                                        background: "linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%)",
+                                                        color: "var(--ds-warning-text)",
+                                                    }}
+                                                >
                                                     ● Stock Bajo
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: "#F0FDF4", color: "#15803D", border: "1px solid #BBF7D0" }}>
+                                                <span 
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                                    style={{
+                                                        border: "1px solid rgba(16, 185, 129, 0.4)",
+                                                        background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%)",
+                                                        color: "var(--ds-success-text)",
+                                                    }}
+                                                >
                                                     ● En Stock
                                                 </span>
                                             )}
@@ -363,10 +416,9 @@ export default function MasterInventory() {
                                             <Table.Td className="text-center">
                                                 <Button
                                                     variant="subtle"
-                                                    color="gray"
                                                     size="xs"
                                                     onClick={() => handleEdit(item)}
-                                                    className="hover:bg-[var(--ds-border)] mx-auto flex"
+                                                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-950/30 transition-colors mx-auto flex cursor-pointer"
                                                 >
                                                     <Pencil width={16} height={16} />
                                                 </Button>
@@ -481,9 +533,12 @@ export default function MasterInventory() {
                                 onClick={handleSave}
                                 loading={saving}
                                 style={{
-                                    backgroundColor: "var(--ds-accent)",
-                                    color: "var(--ds-accent-fg)",
+                                    background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
+                                    color: "#FFFFFF",
+                                    border: "none",
                                 }}
+                                radius="md"
+                                className="hover:brightness-110 cursor-pointer"
                             >
                                 {editingId ? "Actualizar" : "Guardar"}
                             </Button>

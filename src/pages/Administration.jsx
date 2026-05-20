@@ -95,6 +95,38 @@ function generateLocationCode() {
 }
 
 /** Pantalla de administración: usuarios y ubicaciones (solo ADMIN). */
+const BadgeStatus = ({ label, type = "success" }) => {
+  let style = {};
+  if (type === "success") {
+    style = {
+      border: "1px solid rgba(16, 185, 129, 0.4)",
+      background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-success-text)",
+    };
+  } else if (type === "danger") {
+    style = {
+      border: "1px solid rgba(244, 63, 94, 0.4)",
+      background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-danger-text)",
+    };
+  } else {
+    style = {
+      border: "1px solid var(--ds-border)",
+      background: "var(--ds-surface)",
+      color: "var(--ds-muted)",
+    };
+  }
+
+  return (
+    <span 
+      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+      style={style}
+    >
+      {label}
+    </span>
+  );
+};
+
 export default function Administration() {
   const { user, token } = useAuth();
 
@@ -345,10 +377,10 @@ export default function Administration() {
 
   return (
     <Container size="lg" py="2xl" style={{ fontFamily: "Inter, sans-serif" }}>
-      <div className="mb-8">
-        <Title order={1} style={{ fontWeight: 700, color: "var(--ds-text)" }}>
+      <div className="mb-6">
+        <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-1 font-inter tracking-tight">
           Administración
-        </Title>
+        </h1>
         <Text size="sm" mt={4} style={{ color: "var(--ds-muted)" }}>
           Gestión de usuarios y ubicaciones del sistema.
         </Text>
@@ -440,19 +472,10 @@ export default function Administration() {
                           <Table.Td style={{ color: "var(--ds-text)" }}>{roleLabel(u.role ?? u.rol)}</Table.Td>
                           <Table.Td style={{ color: "var(--ds-text)" }}>{baseName}</Table.Td>
                           <Table.Td>
-                            <Badge
-                              variant="outline"
-                              size="sm"
-                              styles={{
-                                root: {
-                                  backgroundColor: u.isActive !== false ? "var(--ds-success-bg)" : "var(--ds-bg)",
-                                  borderColor: u.isActive !== false ? "var(--ds-success-border)" : "var(--ds-border)",
-                                  color: u.isActive !== false ? "var(--ds-success-text)" : "var(--ds-muted)",
-                                },
-                              }}
-                            >
-                              {u.isActive !== false ? "Activo" : "Inactivo"}
-                            </Badge>
+                            <BadgeStatus 
+                              label={u.isActive !== false ? "Activo" : "Inactivo"} 
+                              type={u.isActive !== false ? "success" : "danger"} 
+                            />
                           </Table.Td>
                           <Table.Td>
                             <Group gap="xs" justify="center">
@@ -572,7 +595,12 @@ export default function Administration() {
                             ${Number(loc.costo_almacenamiento_mensual ?? loc.storageCost ?? 0).toFixed(2)}
                           </Table.Td>
                           <Table.Td style={{ color: "var(--ds-muted)", fontSize: "0.8125rem" }}>
-                            {loc.estado ?? "—"}
+                            {loc.estado ? (
+                              <BadgeStatus 
+                                label={loc.estado} 
+                                type={String(loc.estado).toLowerCase() === "activo" || String(loc.estado).toLowerCase() === "active" ? "success" : "danger"} 
+                              />
+                            ) : "—"}
                           </Table.Td>
                           <Table.Td style={{ textAlign: "center" }}>
                             <Button

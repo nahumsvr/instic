@@ -69,7 +69,7 @@ h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--ds-text);
 }
 
 h1 {
@@ -132,6 +132,8 @@ code {
   --ds-success-bg: #F0FDF4;
   --ds-success-border: #BBF7D0;
   --ds-success-text: #15803D;
+  --ds-chart-entradas: #10B981;
+  --ds-chart-salidas: #F43F5E;
 }
 
 [data-mantine-color-scheme="dark"] {
@@ -157,6 +159,8 @@ code {
   --ds-success-bg: #052E16;
   --ds-success-border: #166534;
   --ds-success-text: #86EFAC;
+  --ds-chart-entradas: #34D399;
+  --ds-chart-salidas: #FB7185;
 }
 
 body {

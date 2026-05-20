@@ -118,7 +118,73 @@ Sistema de espaciado de base 4px.
 - Borde: `1px solid #FECACA`
 - Hover: fondo `#FEF2F2`
 
-#### Reglas
+#### Aurora-button (acción contextual de color)
+
+Variante premium para **acciones primarias de creación** (`+ Nuevo`, `+ Agregar`). Usa el color semántico del contexto actual — la misma paleta Aurora de la sección 8 — para conectar visualmente el botón con la página o acción.
+
+```css
+/* Estructura base */
+height: 38px;
+padding: 0 16px;
+border-radius: 6px;
+font-weight: 600;
+font-size: 0.875rem;
+border: 1px solid rgba(R, G, B, 0.5);
+background: linear-gradient(135deg, rgba(R, G, B, 0.15) 0%, rgba(R, G, B, 0.04) 100%), var(--ds-surface);
+color: rgb(R, G, B);
+box-shadow: 0 0 0 1px rgba(R, G, B, 0.08), 0 2px 8px rgba(R, G, B, 0.15);
+
+/* Hover */
+background: linear-gradient(135deg, rgba(R, G, B, 0.22) 0%, rgba(R, G, B, 0.08) 100%), var(--ds-surface);
+box-shadow: 0 0 0 1px rgba(R, G, B, 0.15), 0 4px 16px rgba(R, G, B, 0.25);
+
+/* Active / click */
+transform: scale(0.95);
+```
+
+##### Colores por contexto
+
+| Contexto              | Color Base     | RGB                |
+| --------------------- | -------------- | ------------------ |
+| Dashboard             | Aura Indigo    | `99, 102, 241`     |
+| Inventario / Artículos | Aura Sky      | `14, 165, 233`     |
+| Movimientos           | Aura Emerald   | `16, 185, 129`     |
+| Almacén móvil         | Aura Amber     | `245, 158, 11`     |
+| Administración        | Aura Rose      | `244, 63, 94`      |
+
+##### Implementación en JSX (nativo)
+
+```jsx
+<button
+  onClick={handler}
+  className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+  style={{
+    border: "1px solid rgba(14, 165, 233, 0.5)",
+    background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)",
+    color: "rgba(14, 165, 233, 1)",
+    boxShadow: "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)",
+  }}
+  onMouseEnter={e => {
+    e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.08) 100%), var(--ds-surface)";
+    e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.15), 0 4px 16px rgba(14, 165, 233, 0.25)";
+  }}
+  onMouseLeave={e => {
+    e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)";
+    e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)";
+  }}
+>
+  <Plus width={16} height={16} />
+  Nuevo Artículo
+</button>
+```
+
+##### Reglas de uso
+- Usar **solo para acciones de creación** (`+ Nuevo`, `+ Agregar`). No usar en acciones de edición ni destructivas.
+- El color debe corresponder al contexto de la página (ver tabla de colores arriba).
+- Máximo un botón Aurora por sección.
+- No combinar con el botón Primario (`#111111`) en la misma barra de acciones.
+
+#### Reglas generales
 - Un solo botón primario por sección/formulario.
 - No usar color de acento en botones secundarios.
 - Labels en **infinitivo**: `Guardar`, `Eliminar`, `Confirmar`. No `Guardar cambios ✅`.
@@ -411,7 +477,33 @@ transition: background-color 150ms ease-in-out,
 
 ---
 
-## 8. Reglas de Aplicación
+## 8. Efecto Aura (Degradados Semitransparentes)
+
+El **Efecto Aura** es un estilo visual diseñado para dar a los contenedores (como tarjetas o etiquetas) un aspecto colorido y premium, sin saturar la interfaz de color sólido. Se caracteriza por un borde del color de acento y un degradado de fondo que se desvanece de manera suave hacia la transparencia, superpuesto sobre la superficie del componente para que funcione correctamente tanto en modo claro como en modo oscuro.
+
+### Estructura base (CSS / CSS en JS / inline styles)
+
+```css
+border: 1px solid rgba(color_rgb, 0.4);
+background: linear-gradient(180deg, rgba(color_rgb, 0.12) 0%, rgba(color_rgb, 0) 100%), var(--ds-surface);
+color: var(--ds-color-text-semantico);
+```
+
+### Variaciones de Color Estándar
+
+| Nombre | Color Base (Hex) | Borde (`rgba`) | Fondo (`linear-gradient`) |
+| :--- | :--- | :--- | :--- |
+| **Aura Índigo** (Información / General) | `#6366F1` | `rgba(99, 102, 241, 0.4)` | `linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)` |
+| **Aura Sky** (Finanzas / Secundario) | `#0EA5E9` | `rgba(14, 165, 233, 0.4)` | `linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)` |
+| **Aura Emerald** (Éxito / En Stock) | `#10B981` | `rgba(16, 185, 129, 0.4)` | `linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)` |
+| **Aura Amber** (Alerta / Stock Bajo) | `#F59E0B` | `rgba(245, 158, 11, 0.4)` | `linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%), var(--ds-surface)` |
+| **Aura Rose** (Peligro / Agotado) | `#F43F5E` | `rgba(244, 63, 94, 0.4)` | `linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)` |
+
+*Nota: Siempre se debe usar `var(--ds-surface)` (o el color de fondo correspondiente del tema) como color base final del degradado para evitar que el fondo sea totalmente transparente y se transluzca el fondo principal de la aplicación.*
+
+---
+
+## 9. Reglas de Aplicación
 
 1. **El color llama la atención** — si usas color, el usuario asumirá que hay algo importante ahí. No colorees por estética.
 2. **Jerarquía por peso tipográfico**, no por color.

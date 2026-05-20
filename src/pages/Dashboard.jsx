@@ -181,9 +181,9 @@ export default function Dashboard() {
   /* ── Render ────────────────────────────────────────────────────────── */
   return (
     <Container size="xl" py="2xl">
-      <Title order={1} mb="xl" style={{ fontWeight: 700 }}>
+      <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-6 font-inter tracking-tight">
         Dashboard
-      </Title>
+      </h1>
 
       <div className="flex flex-col gap-4">
       {/* ── KPI Cards ── */}
@@ -261,33 +261,81 @@ export default function Dashboard() {
             </Title>
             <div style={{ width: "100%", height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="entradasGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--ds-chart-entradas)" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="var(--ds-chart-entradas)" stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient id="salidasGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--ds-chart-salidas)" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="var(--ds-chart-salidas)" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--ds-border)" />
                   <XAxis
                     dataKey="name"
                     stroke="var(--ds-muted)"
-                    fontSize={12}
+                    fontSize={11}
                     tickLine={false}
                     axisLine={false}
+                    dy={8}
                   />
                   <YAxis
                     stroke="var(--ds-muted)"
-                    fontSize={12}
+                    fontSize={11}
                     tickLine={false}
                     axisLine={false}
                     allowDecimals={false}
+                    dx={-8}
                   />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "var(--ds-surface)",
                       borderColor: "var(--ds-border)",
                       borderRadius: "8px",
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                      fontFamily: "var(--font-sans, Inter, sans-serif)",
+                      fontSize: "12px",
+                      padding: "8px 12px",
                     }}
-                    itemStyle={{ color: "var(--ds-text)" }}
+                    labelStyle={{
+                      fontWeight: 600,
+                      color: "var(--ds-text)",
+                      marginBottom: "4px",
+                    }}
+                    itemStyle={{
+                      padding: "2px 0",
+                    }}
+                    cursor={{ fill: "var(--ds-border)", opacity: 0.15 }}
                   />
-                  <Legend wrapperStyle={{ fontSize: "12px", color: "var(--ds-muted)" }} />
-                  <Bar dataKey="entradas" name="Entradas" fill="var(--ds-text)" radius={[4, 4, 0, 0]} barSize={28} />
-                  <Bar dataKey="salidas" name="Salidas" fill="var(--ds-muted)" radius={[4, 4, 0, 0]} barSize={28} />
+                  <Legend 
+                    wrapperStyle={{ 
+                      fontSize: "12px", 
+                      color: "var(--ds-muted)",
+                      paddingTop: "12px"
+                    }} 
+                    iconType="circle"
+                    iconSize={8}
+                  />
+                  <Bar 
+                    dataKey="entradas" 
+                    name="Entradas" 
+                    fill="url(#entradasGrad)" 
+                    stroke="var(--ds-chart-entradas)" 
+                    strokeWidth={2}
+                    radius={[4, 4, 0, 0]} 
+                    barSize={24} 
+                  />
+                  <Bar 
+                    dataKey="salidas" 
+                    name="Salidas" 
+                    fill="url(#salidasGrad)" 
+                    stroke="var(--ds-chart-salidas)" 
+                    strokeWidth={2}
+                    radius={[4, 4, 0, 0]} 
+                    barSize={24} 
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

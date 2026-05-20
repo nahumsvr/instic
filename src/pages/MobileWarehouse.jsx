@@ -18,6 +18,56 @@ import {
 /** Estados activos que un almacén puede recibir */
 const ACTIVE_STATES = ["PENDING", "APPROVED", "IN_PROGRESS"];
 
+const BadgeStatus = ({ status }) => {
+  let style = {};
+  let dot = false;
+  const s = String(status || '').toUpperCase();
+
+  if (s === 'COMPLETED') {
+    style = {
+      border: "1px solid rgba(14, 165, 233, 0.4)",
+      background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-info-text)",
+    };
+  } else if (s === 'PENDING') {
+    style = {
+      border: "1px solid rgba(245, 158, 11, 0.4)",
+      background: "linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-warning-text)",
+    };
+    dot = true;
+  } else if (s === 'CANCELLED') {
+    style = {
+      border: "1px solid rgba(244, 63, 94, 0.4)",
+      background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-danger-text)",
+    };
+  } else if (s === 'APPROVED' || s === 'IN_PROGRESS') {
+    style = {
+      border: "1px solid rgba(99, 102, 241, 0.4)",
+      background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-info-text)",
+    };
+    dot = true;
+  } else {
+    style = {
+      border: "1px solid var(--ds-border)",
+      background: "var(--ds-surface)",
+      color: "var(--ds-muted)",
+    };
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+      style={style}
+    >
+      {dot && <span className="w-1.5 h-1.5 rounded-full bg-current"></span>}
+      {status}
+    </span>
+  );
+};
+
 export default function MobileWarehouse() {
   const { token } = useAuth();
 
@@ -306,9 +356,9 @@ export default function MobileWarehouse() {
         {/* Header */}
         <Group justify="space-between" mb="lg">
           <div>
-            <Title order={3} style={{ color: "var(--ds-text)" }}>
+            <h2 className="text-[1.25rem] font-semibold text-[var(--ds-text)] font-inter tracking-tight">
               Tareas Pendientes
-            </Title>
+            </h2>
             <Text size="sm" c="dimmed">
               <span style={{ color: "var(--ds-text)", fontWeight: 500 }}>
                 {locationName || locationId}
@@ -323,9 +373,16 @@ export default function MobileWarehouse() {
             </Text>
           </div>
           <Group gap="xs">
-            <Badge size="lg" color="blue" variant="light">
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                border: "1px solid rgba(99, 102, 241, 0.4)",
+                background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+                color: "var(--ds-info-text)",
+              }}
+            >
               {orders.length} pedido{orders.length !== 1 ? "s" : ""}
-            </Badge>
+            </span>
             <Button
               variant="subtle"
               color="gray"
@@ -403,17 +460,7 @@ export default function MobileWarehouse() {
                     >
                       #{orderId}
                     </Text>
-                    <Badge
-                      color={
-                        estado.toUpperCase() === "PENDING"
-                          ? "orange"
-                          : estado.toUpperCase() === "APPROVED"
-                          ? "blue"
-                          : "cyan"
-                      }
-                    >
-                      {estado}
-                    </Badge>
+                    <BadgeStatus status={estado} />
                   </Group>
 
                   {articleName && (
@@ -426,8 +473,8 @@ export default function MobileWarehouse() {
                     {itemCount > 0
                       ? `${itemCount} artículo${itemCount !== 1 ? "s" : ""}`
                       : order.cantidad
-                      ? `${order.cantidad} unidades`
-                      : "—"}
+                        ? `${order.cantidad} unidades`
+                        : "—"}
                   </Text>
 
                   <Button
@@ -479,17 +526,9 @@ export default function MobileWarehouse() {
             }}
           >
             {scannerOpen && (
-              <ReactZxingScanner
-                onUpdate={(result) => {
-                  if (result) {
-                    const text =
-                      typeof result.getText === "function"
-                        ? result.getText()
-                        : String(result);
-                    if (text) processScannedCode(text);
-                  }
-                }}
-                onError={() => toast.error("Error al acceder a la cámara")}
+              <QrScanner
+                onScan={(text) => processScannedCode(text)}
+                onError={() => toast.error("Error al acceder a la cámara. Verifica los permisos del navegador.")}
                 width="100%"
                 height="100%"
               />
@@ -561,9 +600,7 @@ export default function MobileWarehouse() {
               </Group>
               <Group justify="space-between">
                 <Text c="dimmed">Estado:</Text>
-                <Badge>
-                  {selectedOrder.estado ?? selectedOrder.status}
-                </Badge>
+                <BadgeStatus status={selectedOrder.estado ?? selectedOrder.status} />
               </Group>
               {(selectedOrder.origin ?? selectedOrder.origen) && (
                 <Group justify="space-between">

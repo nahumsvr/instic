@@ -7,7 +7,7 @@ export default function AppLayout() {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-14 md:pt-0"
         style={{ background: "var(--ds-bg)" }}
       >
         <Outlet />
