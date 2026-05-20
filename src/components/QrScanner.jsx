@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
+import { BrowserMultiFormatReader } from "@zxing/browser";
+import { NotFoundException } from "@zxing/library";
 
 /**
  * Componente de escáner QR/barcode que funciona en móvil y desktop.
@@ -16,19 +17,20 @@ export default function QrScanner({ onScan, onError, width = "100%", height = "1
   useEffect(() => {
     let stream = null;
     let codeReader = null;
+    let controls = null;
     let cancelled = false;
 
     const start = async () => {
       // 1. Verificar contexto seguro (HTTPS o localhost)
-      if (!window.isSecureContext) {
-        const err = new Error(
-          "La cámara requiere HTTPS. Abre la app desde una dirección segura (https://)."
-        );
-        err.name = "InsecureContextError";
-        setCameraError(err);
-        if (onError) onError(err);
-        return;
-      }
+      // if (!window.isSecureContext) {
+      //   const err = new Error(
+      //     "La cámara requiere HTTPS. Abre la app desde una dirección segura (https://)."
+      //   );
+      //   err.name = "InsecureContextError";
+      //   setCameraError(err);
+      //   if (onError) onError(err);
+      //   return;
+      //}
 
       // 2. Verificar que la API existe
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -60,14 +62,14 @@ export default function QrScanner({ onScan, onError, width = "100%", height = "1
         // 4. Asignar el stream al elemento de video
         const video = videoRef.current;
         video.srcObject = stream;
-        await video.play().catch(() => {}); // play() puede ser interrumpido, no es crítico
+        await video.play().catch(() => { }); // play() puede ser interrumpido, no es crítico
 
         // 5. Iniciar el lector de códigos sobre el stream
         codeReader = new BrowserMultiFormatReader();
         codeReader.timeBetweenDecodingAttempts = 150;
 
         // decodeFromStream maneja el video element internamente con nuestro stream
-        codeReader.decodeFromStream(stream, video, (result, err) => {
+        controls = await codeReader.decodeFromStream(stream, video, (result, err) => {
           if (cancelled) return;
           if (result) {
             const text =
@@ -81,6 +83,10 @@ export default function QrScanner({ onScan, onError, width = "100%", height = "1
             console.warn("[QrScanner] decode warn:", err);
           }
         });
+
+        if (cancelled && controls) {
+          try { controls.stop(); } catch (_) { }
+        }
       } catch (err) {
         if (cancelled) return;
         console.error("[QrScanner] camera error:", err);
@@ -93,9 +99,12 @@ export default function QrScanner({ onScan, onError, width = "100%", height = "1
 
     return () => {
       cancelled = true;
+      if (controls) {
+        try { controls.stop(); } catch (_) { }
+      }
       // Detener el lector (esto también detiene el stream interno)
       if (codeReader) {
-        try { codeReader.reset(); } catch (_) {}
+        try { codeReader.reset(); } catch (_) { }
       }
       // Detener las pistas del stream como seguro adicional
       if (stream) {

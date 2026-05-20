@@ -1,11 +1,46 @@
-import React, { useState, useEffect } from "react";
-import { Select, NumberInput, Loader, Group, Modal, Tooltip } from "@mantine/core";
+import { useState, useEffect } from "react";
+import { Select, NumberInput, Loader, Group, Modal, Tooltip, TextInput } from "@mantine/core";
 import { toast } from "sonner";
 import QRCodeModule from "react-qr-code";
 const QRCode = QRCodeModule.default || QRCodeModule;
-import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
-import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare } from "@gravity-ui/icons";
+import QrScanner from "../components/QrScanner";
+import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare, Copy, Check } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
+import { getInitialWarehouseLocation } from "../utils/warehouseLocation";
+
+/* ================= COPY CODE BUTTON ================= */
+function CopyCodeButton({ code }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      toast.success("Código copiado al portapapeles.");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("No se pudo copiar el código. Cópialo manualmente.");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      title={copied ? "¡Copiado!" : "Copiar código"}
+      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md border text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out whitespace-nowrap"
+      style={{
+        borderColor: copied ? "rgba(16, 185, 129, 0.5)" : "var(--ds-border)",
+        background: copied
+          ? "linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.04) 100%), var(--ds-surface)"
+          : "var(--ds-surface)",
+        color: copied ? "rgba(16, 185, 129, 1)" : "var(--ds-text)",
+      }}
+    >
+      {copied ? <Check width={15} height={15} /> : <Copy width={15} height={15} />}
+      {copied ? "Copiado" : "Copiar"}
+    </button>
+  );
+}
 
 const SECTIONS = [
   { id: "historial", label: "Historial", title: "Historial de Operaciones", icon: Clock },
@@ -24,7 +59,7 @@ const Card = ({ children, className = "" }) => (
 );
 
 const ButtonPrimary = ({ children, className = "", ...props }) => (
-  <button 
+  <button
     className={`bg-[var(--ds-accent)] text-[var(--ds-accent-fg)] hover:bg-[var(--ds-accent-hover)] border-none rounded-[6px] px-4 h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
     {...props}
   >
@@ -33,8 +68,8 @@ const ButtonPrimary = ({ children, className = "", ...props }) => (
 );
 
 const ButtonSecondary = ({ children, className = "", ...props }) => (
-  <button 
-    className={`bg-transparent text-[var(--ds-text)] hover:bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-[6px] px-4 h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
+  <button
+    className={`bg-transparent text-[var(--ds-text)] hover:bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-[6px] px-4 min-h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
     {...props}
   >
     {children}
@@ -51,15 +86,17 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 );
 
 const BadgeStatus = ({ status }) => {
-  let style = {};
+  let style;
   let dot = false;
+  let text = "";
 
   if (status === 'COMPLETED') {
     style = {
-      border: "1px solid rgba(14, 165, 233, 0.4)",
-      background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
-      color: "var(--ds-info-text)",
+      border: "1px solid rgba(16, 185, 129, 0.4)",
+      background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-success-text)",
     };
+    text = "Completado";
   } else if (status === 'PENDING') {
     style = {
       border: "1px solid rgba(245, 158, 11, 0.4)",
@@ -67,34 +104,46 @@ const BadgeStatus = ({ status }) => {
       color: "var(--ds-warning-text)",
     };
     dot = true;
+    text = "Pendiente"
   } else if (status === 'CANCELLED') {
     style = {
       border: "1px solid rgba(244, 63, 94, 0.4)",
       background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
       color: "var(--ds-danger-text)",
     };
-  } else if (status === 'APPROVED' || status === 'IN_PROGRESS') {
+    text = "Cancelado";
+  } else if (status === 'APPROVED') {
     style = {
-      border: "1px solid rgba(99, 102, 241, 0.4)",
-      background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+      border: "1px solid rgba(139, 92, 246, 0.4)",
+      background: "linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 100%), var(--ds-surface)",
+      color: "rgba(139, 92, 246, 1)",
+    };
+    dot = true;
+    text = "Aprobado";
+  } else if (status === 'IN_PROGRESS') {
+    style = {
+      border: "1px solid var(--ds-info-border)",
+      background: "linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 100%), var(--ds-surface)",
       color: "var(--ds-info-text)",
     };
     dot = true;
+    text = "En trancito";
   } else {
     style = {
       border: "1px solid var(--ds-border)",
       background: "var(--ds-surface)",
       color: "var(--ds-muted)",
     };
+    text = status.toUpperCase();
   }
 
   return (
-    <span 
+    <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
       style={style}
     >
       {dot && <span className="w-1.5 h-1.5 rounded-full bg-current"></span>}
-      {status}
+      {text}
     </span>
   );
 };
@@ -143,6 +192,9 @@ export default function Movimientos() {
 function Historial() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(getInitialWarehouseLocation().id || "all");
+  const [selectedType, setSelectedType] = useState("all");
 
   const fetchMovements = async () => {
     setLoading(true);
@@ -160,7 +212,23 @@ function Historial() {
     }
   };
 
-  useEffect(() => { fetchMovements(); }, []);
+  const fetchLocations = async () => {
+    try {
+      const res = await fetch(`${API_URL}/locations`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (!res.ok) throw new Error("Error al obtener ubicaciones");
+      const json = await res.json();
+      setLocations(json);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovements();
+    fetchLocations();
+  }, []);
 
   const updateStatus = async (id, status) => {
     try {
@@ -194,56 +262,120 @@ function Historial() {
     }
   };
 
+  const filteredData = data.filter((item) => {
+    if (selectedLocation !== "all") {
+      const originId = item.originLocation?.id_ubicacion ?? item.originLocation?.id;
+      const destId = item.destinationLocation?.id_ubicacion ?? item.destinationLocation?.id;
+      if (String(originId) !== String(selectedLocation) && String(destId) !== String(selectedLocation)) {
+        return false;
+      }
+    }
+
+    if (selectedType !== "all") {
+      const type = item.tipo?.toUpperCase();
+      if (selectedType === "INPUT" && type !== "INPUT") return false;
+      if (selectedType === "OUTPUT" && type !== "OUTPUT") return false;
+      if (selectedType === "TRANSFER" && type !== "TRANSFER" && type !== "TRANSFERENCIA") return false;
+    }
+
+    return true;
+  });
+
   if (loading) return <div className="flex justify-center p-8"><Loader color="gray" /></div>;
 
   return (
-    <div className="overflow-x-auto rounded-[8px] border border-[var(--ds-border)]">
-      <table className="w-full text-left border-collapse text-[0.875rem]">
-        <thead>
-          <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)]">
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">ID</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Fecha</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Tipo</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Artículo</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Cantidad</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Estado</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)] text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, idx) => (
-            <tr key={item.id_movimiento} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-              <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
-              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.created_at || Date.now()).toLocaleDateString()}</td>
-              <td className="px-4 py-3 text-[var(--ds-text)]">{item.tipo}</td>
-              <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
-              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
-              <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
-              <td className="px-4 py-3 text-right">
-                <Group justify="flex-end" gap="xs">
-                  {item.estado === 'PENDING' && (
-                    <ButtonPrimary onClick={() => updateStatus(item.id_movimiento, 'COMPLETED')}>
-                      Completar
-                    </ButtonPrimary>
-                  )}
-                  {item.estado === 'COMPLETED' && (
-                    <ButtonDanger onClick={() => cancelMovement(item.id_movimiento)}>
-                      Anular
-                    </ButtonDanger>
-                  )}
-                </Group>
-              </td>
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Select
+          label="Filtrar por Ubicación"
+          placeholder="Todas las ubicaciones"
+          data={[
+            { value: "all", label: "Todas las ubicaciones" },
+            ...locations.map((l) => ({
+              value: (l.id_ubicacion ?? l.id ?? "").toString(),
+              label: l.nombre ?? l.name ?? "",
+            })),
+          ]}
+          value={selectedLocation}
+          onChange={(val) => setSelectedLocation(val || "all")}
+          searchable
+          clearable
+        />
+        <Select
+          label="Filtrar por Tipo de Movimiento"
+          placeholder="Todos los movimientos"
+          data={[
+            { value: "all", label: "Todos los movimientos" },
+            { value: "INPUT", label: "Entradas" },
+            { value: "OUTPUT", label: "Salidas" },
+            { value: "TRANSFER", label: "Transferencias" },
+          ]}
+          value={selectedType}
+          onChange={(val) => setSelectedType(val || "all")}
+          clearable
+        />
+      </div>
+
+      <div className="overflow-x-auto rounded-[8px] border border-[var(--ds-border)]">
+        <table className="w-full text-left border-collapse text-[0.875rem]">
+          <thead>
+            <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)]">
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">ID</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Fecha</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Tipo</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Origen</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Destino</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Artículo</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Cantidad</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Estado</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)] text-right">Acciones</th>
             </tr>
-          ))}
-          {data.length === 0 && (
-            <tr>
-              <td colSpan={7} className="text-center py-8 text-[var(--ds-muted)]">
-                No hay movimientos registrados.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredData.map((item, idx) => (
+              <tr key={item.id_movimiento} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
+                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">
+                  {(() => {
+                    const d = new Date(item.fecha_movimiento || item.created_at || Date.now());
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                  })()}
+                </td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">
+                  {item.tipo === 'INPUT' ? 'Entrada' : item.tipo === 'OUTPUT' ? 'Salida' : item.tipo === 'TRANSFER' || item.tipo === 'TRANSFERENCIA' ? 'Transferencia' : item.tipo}
+                </td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.originLocation?.nombre || item.originLocation?.name || '—'}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.destinationLocation?.nombre || item.destinationLocation?.name || '—'}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
+                <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
+                <td className="px-4 py-3 text-right">
+                  <Group justify="flex-end" gap="xs">
+                    {item.estado === 'PENDING' && (
+                      <ButtonPrimary onClick={() => updateStatus(item.id_movimiento, 'COMPLETED')}>
+                        Completar
+                      </ButtonPrimary>
+                    )}
+                    {item.estado === 'COMPLETED' && (
+                      <ButtonDanger onClick={() => cancelMovement(item.id_movimiento)}>
+                        Anular
+                      </ButtonDanger>
+                    )}
+                  </Group>
+                </td>
+              </tr>
+            ))}
+            {filteredData.length === 0 && (
+              <tr>
+                <td colSpan={9} className="text-center py-8 text-[var(--ds-muted)]">
+                  No hay movimientos registrados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -293,7 +425,7 @@ function Registrar() {
         quantity: Number(formData.quantity),
         status: formData.status
       };
-      
+
       if (type === 'input') {
         payload.destinationId = Number(formData.destinationId);
         if (formData.originId) payload.originId = Number(formData.originId);
@@ -315,10 +447,10 @@ function Registrar() {
       });
 
       if (!res.ok) {
-        const errJson = await res.json().catch(()=>({}));
+        const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.message || `Error ${res.status}`);
       }
-      
+
       toast.success("Movimiento registrado correctamente.");
       setFormData({ ...formData, quantity: 1, articleId: '' });
     } catch (err) {
@@ -335,14 +467,13 @@ function Registrar() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Select 
-        label="Tipo de Movimiento" 
-        value={type} 
+      <Select
+        label="Tipo de Movimiento"
+        value={type}
         onChange={(val) => setType(val)}
         data={[
           { value: 'input', label: 'Entrada' },
           { value: 'output', label: 'Salida' },
-          { value: 'transfer', label: 'Transferencia' }
         ]}
         required
       />
@@ -433,22 +564,58 @@ function Registrar() {
 function Ordenes() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [modalOpened, setModalOpened] = useState(false);
   const [qrModalOpened, setQrModalOpened] = useState(false);
   const [generatedQr, setGeneratedQr] = useState("");
   const [generatedOrder, setGeneratedOrder] = useState(null); // respuesta completa de la orden creada
   const [scannerOpened, setScannerOpened] = useState(false);
+  const [manualCode, setManualCode] = useState("");
   const [scannedOrder, setScannedOrder] = useState(null);
+  const [isNewOrder, setIsNewOrder] = useState(false);
 
   const [formData, setFormData] = useState({ articleId: '', quantity: 1, originId: '', destinationId: '' });
   const [articles, setArticles] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(getInitialWarehouseLocation().id || "all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+
+  const filteredOrders = orders.filter((item) => {
+    if (selectedLocation !== "all") {
+      const originId = item.origin?.id_ubicacion ?? item.origin?.id ?? item.originId;
+      const destId = item.destination?.id_ubicacion ?? item.destination?.id ?? item.destinationId;
+      if (String(originId) !== String(selectedLocation) && String(destId) !== String(selectedLocation)) {
+        return false;
+      }
+    }
+    if (selectedStatus !== "all") {
+      const status = (item.estado ?? item.status)?.toUpperCase();
+      if (status !== selectedStatus) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const handleShowQrModal = (item) => {
+    const qrCode = item.qr_code?.split('/').pop() || item.qrCode || "ORD-UNKNOWN";
+    setGeneratedQr(qrCode);
+    setGeneratedOrder({
+      qrCode,
+      articleName: item.article?.nombre || item.article?.name || item.articleId,
+      quantity: item.cantidad,
+      originName: item.origin?.nombre || item.origin?.name || item.originId,
+      destinationName: item.destination?.nombre || item.destination?.name || item.destinationId,
+      createdAt: new Date(item.created_at || item.createdAt || Date.now()).toLocaleString('es-MX'),
+    });
+    setIsNewOrder(false);
+    setQrModalOpened(true);
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${getToken()}` }});
+      const res = await fetch(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (!res.ok) throw new Error("Error al obtener órdenes");
       setOrders(await res.json());
     } catch (err) {
@@ -507,6 +674,7 @@ function Ordenes() {
         destinationName: destination?.nombre || destination?.name || formData.destinationId,
         createdAt: new Date().toLocaleString('es-MX'),
       });
+      setIsNewOrder(true);
       setModalOpened(false);
       setQrModalOpened(true);
       fetchOrders();
@@ -515,12 +683,12 @@ function Ordenes() {
     }
   };
 
-  const handleScan = async (result) => {
-    if (!result || !result.text) return;
+  const processScannedCode = async (code) => {
+    if (!code?.trim()) return;
     setScannerOpened(false);
     try {
-      const code = result.text.split('/').pop();
-      const res = await fetch(`${API_URL}/orders/${code}`, {
+      const cleanCode = code.trim().split('/').pop();
+      const res = await fetch(`${API_URL}/orders/${cleanCode}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       if (!res.ok) throw new Error("Orden no encontrada o inválida");
@@ -531,8 +699,8 @@ function Ordenes() {
   };
 
   const handleAdvanceState = async (id, currentStatus) => {
-    let nextStatus = '';
-    let payload = {};
+    let nextStatus;
+    let payload;
     if (currentStatus === 'PENDING') {
       nextStatus = 'APPROVED';
       const eta = prompt("Ingresa el ETA (días estimados):", "3");
@@ -638,7 +806,7 @@ function Ordenes() {
           </div>
         </div>
         <div class="footer">Generado por Instic · ${order.createdAt}</div>
-        <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };<\/script>
+        <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };</script>
       </body>
       </html>
     `);
@@ -677,9 +845,9 @@ function Ordenes() {
   };
 
   return (
-    <div>
-      <Group justify="space-between" mb="lg">
-        <ButtonSecondary onClick={() => setScannerOpened(true)}>
+    <div className="flex flex-col gap-6">
+      <Group justify="space-between">
+        <ButtonSecondary onClick={() => { setScannerOpened(true); setManualCode(""); }}>
           Escanear QR
         </ButtonSecondary>
         <ButtonPrimary onClick={() => setModalOpened(true)}>
@@ -687,31 +855,73 @@ function Ordenes() {
         </ButtonPrimary>
       </Group>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Select
+          label="Filtrar por Ubicación"
+          placeholder="Todas las ubicaciones"
+          data={[
+            { value: "all", label: "Todas las ubicaciones" },
+            ...locations.map((l) => ({
+              value: (l.id_ubicacion ?? l.id ?? "").toString(),
+              label: l.nombre ?? l.name ?? "",
+            })),
+          ]}
+          value={selectedLocation}
+          onChange={(val) => setSelectedLocation(val || "all")}
+          searchable
+          clearable
+        />
+        <Select
+          label="Filtrar por Estado"
+          placeholder="Todos los estados"
+          data={[
+            { value: "all", label: "Todos los estados" },
+            { value: "PENDING", label: "Pendiente" },
+            { value: "APPROVED", label: "Aprobada" },
+            { value: "IN_PROGRESS", label: "En Progreso" },
+            { value: "COMPLETED", label: "Completada" },
+            { value: "CANCELLED", label: "Cancelada" },
+          ]}
+          value={selectedStatus}
+          onChange={(val) => setSelectedStatus(val || "all")}
+          clearable
+        />
+      </div>
+
       <div className="overflow-x-auto rounded-[8px] border border-[var(--ds-border)]">
         <table className="w-full text-left border-collapse text-[0.875rem]">
           <thead>
             <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)]">
-              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">QR Code</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Artículo</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Cantidad</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Origen</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Destino</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Estado</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)] text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((item, idx) => (
+            {filteredOrders.map((item, idx) => (
               <tr key={item.id_orden} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qr_code?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
                 <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.nombre || item.origin?.name || item.originId}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.destination?.nombre || item.destination?.name || item.destinationId}</td>
                 <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
+                <td className="px-4 py-3 text-right">
+                  <Group justify="flex-end" gap="xs">
+                    <Tooltip label="Ver QR e Imprimir" withArrow>
+                      <ButtonSecondary className="py-2" onClick={() => handleShowQrModal(item)}>
+                        <QrCode width={16} height={16} />
+                        QR / Imprimir
+                      </ButtonSecondary>
+                    </Tooltip>
+                  </Group>
+                </td>
               </tr>
             ))}
-            {orders.length === 0 && !loading && (
-              <tr><td colSpan={6} className="text-center py-8 text-[var(--ds-muted)]">No hay órdenes registradas.</td></tr>
+            {filteredOrders.length === 0 && !loading && (
+              <tr><td colSpan={7} className="text-center py-8 text-[var(--ds-muted)]">No hay órdenes registradas que cumplan con los criterios.</td></tr>
             )}
           </tbody>
         </table>
@@ -723,28 +933,28 @@ function Ordenes() {
             label="Artículo"
             data={articles.map(a => ({ value: (a.id_articulo || a.id || '').toString(), label: `${a.codigo || a.code} - ${a.nombre || a.name}` }))}
             value={formData.articleId}
-            onChange={(v) => setFormData({...formData, articleId: v})}
+            onChange={(v) => setFormData({ ...formData, articleId: v })}
             required
             searchable
           />
           <NumberInput
             label="Cantidad"
             value={formData.quantity}
-            onChange={(v) => setFormData({...formData, quantity: v})}
+            onChange={(v) => setFormData({ ...formData, quantity: v })}
             min={1} required
           />
           <Select
             label="Origen (Proveedor / Almacén)"
             data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
             value={formData.originId}
-            onChange={(v) => setFormData({...formData, originId: v})}
+            onChange={(v) => setFormData({ ...formData, originId: v })}
             required
           />
           <Select
             label="Destino (Tienda)"
             data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
             value={formData.destinationId}
-            onChange={(v) => setFormData({...formData, destinationId: v})}
+            onChange={(v) => setFormData({ ...formData, destinationId: v })}
             required
           />
           <Group justify="flex-end" mt="xl">
@@ -759,7 +969,7 @@ function Ordenes() {
       <Modal
         opened={qrModalOpened}
         onClose={() => setQrModalOpened(false)}
-        title="Orden Generada Exitosamente"
+        title={isNewOrder ? "Orden Generada Exitosamente" : "Detalle de Orden y QR"}
         shadow="0 8px 40px rgba(0,0,0,0.12)"
         size="md"
       >
@@ -769,11 +979,23 @@ function Ordenes() {
             <div className="flex justify-center">
               <div
                 id="qr-print-area"
-                className="bg-white p-4 rounded-lg border border-[var(--ds-border)] flex flex-col items-center gap-3"
+                className="bg-white p-4 rounded-lg border border-[var(--ds-border)] flex flex-col items-center gap-3 max-w-full"
+                style={{ width: 212 }}
               >
-                <QRCode value={generatedQr} size={180} />
-                <p className="font-mono text-xs text-[#111111] mt-1">{generatedQr}</p>
+                <QRCode value={generatedQr} size={180} style={{ display: "block", flexShrink: 0 }} />
               </div>
+            </div>
+
+            {/* Copiar código */}
+            <div className="flex items-center gap-2">
+              <div
+                className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg)]"
+              >
+                <span className="flex-1 min-w-0 font-mono text-sm text-[var(--ds-text)] truncate select-all">
+                  {generatedQr}
+                </span>
+              </div>
+              <CopyCodeButton code={generatedQr} />
             </div>
 
             {/* Información del pedido */}
@@ -831,9 +1053,57 @@ function Ordenes() {
         )}
       </Modal>
 
-      <Modal opened={scannerOpened} onClose={() => setScannerOpened(false)} title="Escanear QR de Orden" size="lg">
-        <div className="overflow-hidden rounded-lg bg-[var(--ds-bg)] flex justify-center p-4">
-          <BarcodeScanner onUpdate={handleScan} />
+      <Modal
+        opened={scannerOpened}
+        onClose={() => setScannerOpened(false)}
+        title="Escanear QR de Orden"
+        size="md"
+        styles={{
+          content: { backgroundColor: "var(--ds-surface)" },
+          header: { backgroundColor: "var(--ds-surface)" },
+        }}
+      >
+        <div className="flex flex-col gap-4">
+          <div
+            className="w-full h-[280px] rounded-lg overflow-hidden relative border border-[var(--ds-border)] bg-[var(--ds-bg)]"
+          >
+            {scannerOpened && (
+              <QrScanner
+                onScan={processScannedCode}
+                onError={() => toast.error("Error al acceder a la cámara. Verifica los permisos del navegador.")}
+                width="100%"
+                height="100%"
+              />
+            )}
+          </div>
+
+          <div className="text-[var(--ds-muted)] text-sm text-center">
+            O ingresa el código manualmente:
+          </div>
+
+          <div className="flex gap-2">
+            <TextInput
+              placeholder="Ej. ORD-123456"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && processScannedCode(manualCode)
+              }
+              style={{ flex: 1 }}
+              styles={{
+                input: {
+                  backgroundColor: "var(--ds-bg)",
+                  borderColor: "var(--ds-border)",
+                  color: "var(--ds-text)",
+                },
+              }}
+            />
+            <ButtonPrimary
+              onClick={() => processScannedCode(manualCode)}
+            >
+              Validar
+            </ButtonPrimary>
+          </div>
         </div>
       </Modal>
 
@@ -843,7 +1113,7 @@ function Ordenes() {
             <div className="bg-[var(--ds-bg)] p-4 rounded-lg border border-[var(--ds-border)]">
               <p className="text-sm text-[var(--ds-muted)] mb-1">Artículo</p>
               <p className="font-medium text-[var(--ds-text)] mb-3">{scannedOrder.article?.nombre || scannedOrder.article?.name}</p>
-              
+
               <Group grow>
                 <div>
                   <p className="text-sm text-[var(--ds-muted)] mb-1">Cantidad</p>
@@ -851,7 +1121,8 @@ function Ordenes() {
                 </div>
                 <div>
                   <p className="text-sm text-[var(--ds-muted)] mb-1">Estado Actual</p>
-                  <BadgeStatus status={scannedOrder.status} />
+                  {console.log(scannedOrder)}
+                  <BadgeStatus status={scannedOrder.estado} />
                 </div>
               </Group>
             </div>
@@ -859,7 +1130,7 @@ function Ordenes() {
             <Group justify="flex-end" mt="xl">
               <ButtonSecondary onClick={() => setScannedOrder(null)}>Cerrar</ButtonSecondary>
               {scannedOrder.status !== 'COMPLETED' && scannedOrder.status !== 'CANCELLED' && (
-                <ButtonPrimary onClick={() => handleAdvanceState(scannedOrder.id, scannedOrder.status)}>
+                <ButtonPrimary onClick={() => handleAdvanceState(scannedOrder.id_orden, scannedOrder.estado)}>
                   Avanzar Estado
                 </ButtonPrimary>
               )}
