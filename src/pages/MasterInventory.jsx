@@ -200,7 +200,7 @@ export default function MasterInventory() {
                     <Button
                         leftSection={<Plus width={16} height={16} />}
                         style={{
-                            background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
+                            background: "linear-gradient(135deg, #6366F1 0%, #4e46e5 100%)",
                             color: "#FFFFFF",
                             border: "none",
                         }}
@@ -365,15 +365,36 @@ export default function MasterInventory() {
                                     {isEmployee && (
                                         <Table.Td className="text-center">
                                             {item.stock === 0 ? (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
+                                                <span 
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                                    style={{
+                                                        border: "1px solid rgba(244, 63, 94, 0.4)",
+                                                        background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%)",
+                                                        color: "var(--ds-danger-text)",
+                                                    }}
+                                                >
                                                     ● Agotado
                                                 </span>
                                             ) : item.stock <= 10 ? (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                                                <span 
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                                    style={{
+                                                        border: "1px solid rgba(245, 158, 11, 0.4)",
+                                                        background: "linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%)",
+                                                        color: "var(--ds-warning-text)",
+                                                    }}
+                                                >
                                                     ● Stock Bajo
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                                                <span 
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                                    style={{
+                                                        border: "1px solid rgba(16, 185, 129, 0.4)",
+                                                        background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%)",
+                                                        color: "var(--ds-success-text)",
+                                                    }}
+                                                >
                                                     ● En Stock
                                                 </span>
                                             )}

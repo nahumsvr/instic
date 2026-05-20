@@ -411,7 +411,33 @@ transition: background-color 150ms ease-in-out,
 
 ---
 
-## 8. Reglas de Aplicación
+## 8. Efecto Aura (Degradados Semitransparentes)
+
+El **Efecto Aura** es un estilo visual diseñado para dar a los contenedores (como tarjetas o etiquetas) un aspecto colorido y premium, sin saturar la interfaz de color sólido. Se caracteriza por un borde del color de acento y un degradado de fondo que se desvanece de manera suave hacia la transparencia, superpuesto sobre la superficie del componente para que funcione correctamente tanto en modo claro como en modo oscuro.
+
+### Estructura base (CSS / CSS en JS / inline styles)
+
+```css
+border: 1px solid rgba(color_rgb, 0.4);
+background: linear-gradient(180deg, rgba(color_rgb, 0.12) 0%, rgba(color_rgb, 0) 100%), var(--ds-surface);
+color: var(--ds-color-text-semantico);
+```
+
+### Variaciones de Color Estándar
+
+| Nombre | Color Base (Hex) | Borde (`rgba`) | Fondo (`linear-gradient`) |
+| :--- | :--- | :--- | :--- |
+| **Aura Índigo** (Información / General) | `#6366F1` | `rgba(99, 102, 241, 0.4)` | `linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)` |
+| **Aura Sky** (Finanzas / Secundario) | `#0EA5E9` | `rgba(14, 165, 233, 0.4)` | `linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)` |
+| **Aura Emerald** (Éxito / En Stock) | `#10B981` | `rgba(16, 185, 129, 0.4)` | `linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)` |
+| **Aura Amber** (Alerta / Stock Bajo) | `#F59E0B` | `rgba(245, 158, 11, 0.4)` | `linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%), var(--ds-surface)` |
+| **Aura Rose** (Peligro / Agotado) | `#F43F5E` | `rgba(244, 63, 94, 0.4)` | `linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)` |
+
+*Nota: Siempre se debe usar `var(--ds-surface)` (o el color de fondo correspondiente del tema) como color base final del degradado para evitar que el fondo sea totalmente transparente y se transluzca el fondo principal de la aplicación.*
+
+---
+
+## 9. Reglas de Aplicación
 
 1. **El color llama la atención** — si usas color, el usuario asumirá que hay algo importante ahí. No colorees por estética.
 2. **Jerarquía por peso tipográfico**, no por color.
