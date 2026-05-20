@@ -6,6 +6,7 @@ const QRCode = QRCodeModule.default || QRCodeModule;
 import QrScanner from "../components/QrScanner";
 import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
+import { getInitialWarehouseLocation } from "../utils/warehouseLocation";
 
 const SECTIONS = [
   { id: "historial", label: "Historial", title: "Historial de Operaciones", icon: Clock },
@@ -143,6 +144,9 @@ export default function Movimientos() {
 function Historial() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(getInitialWarehouseLocation().id || "all");
+  const [selectedType, setSelectedType] = useState("all");
 
   const fetchMovements = async () => {
     setLoading(true);
@@ -160,7 +164,23 @@ function Historial() {
     }
   };
 
-  useEffect(() => { fetchMovements(); }, []);
+  const fetchLocations = async () => {
+    try {
+      const res = await fetch(`${API_URL}/locations`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (!res.ok) throw new Error("Error al obtener ubicaciones");
+      const json = await res.json();
+      setLocations(json);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovements();
+    fetchLocations();
+  }, []);
 
   const updateStatus = async (id, status) => {
     try {
@@ -194,56 +214,114 @@ function Historial() {
     }
   };
 
+  const filteredData = data.filter((item) => {
+    if (selectedLocation !== "all") {
+      const originId = item.originLocation?.id_ubicacion ?? item.originLocation?.id;
+      const destId = item.destinationLocation?.id_ubicacion ?? item.destinationLocation?.id;
+      if (String(originId) !== String(selectedLocation) && String(destId) !== String(selectedLocation)) {
+        return false;
+      }
+    }
+
+    if (selectedType !== "all") {
+      const type = item.tipo?.toUpperCase();
+      if (selectedType === "INPUT" && type !== "INPUT") return false;
+      if (selectedType === "OUTPUT" && type !== "OUTPUT") return false;
+      if (selectedType === "TRANSFER" && type !== "TRANSFER" && type !== "TRANSFERENCIA") return false;
+    }
+
+    return true;
+  });
+
   if (loading) return <div className="flex justify-center p-8"><Loader color="gray" /></div>;
 
   return (
-    <div className="overflow-x-auto rounded-[8px] border border-[var(--ds-border)]">
-      <table className="w-full text-left border-collapse text-[0.875rem]">
-        <thead>
-          <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)]">
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">ID</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Fecha</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Tipo</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Artículo</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Cantidad</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Estado</th>
-            <th className="px-4 py-3 font-semibold text-[var(--ds-muted)] text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, idx) => (
-            <tr key={item.id_movimiento} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-              <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
-              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.created_at || Date.now()).toLocaleDateString()}</td>
-              <td className="px-4 py-3 text-[var(--ds-text)]">{item.tipo}</td>
-              <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
-              <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
-              <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
-              <td className="px-4 py-3 text-right">
-                <Group justify="flex-end" gap="xs">
-                  {item.estado === 'PENDING' && (
-                    <ButtonPrimary onClick={() => updateStatus(item.id_movimiento, 'COMPLETED')}>
-                      Completar
-                    </ButtonPrimary>
-                  )}
-                  {item.estado === 'COMPLETED' && (
-                    <ButtonDanger onClick={() => cancelMovement(item.id_movimiento)}>
-                      Anular
-                    </ButtonDanger>
-                  )}
-                </Group>
-              </td>
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Select
+          label="Filtrar por Ubicación"
+          placeholder="Todas las ubicaciones"
+          data={[
+            { value: "all", label: "Todas las ubicaciones" },
+            ...locations.map((l) => ({
+              value: (l.id_ubicacion ?? l.id ?? "").toString(),
+              label: l.nombre ?? l.name ?? "",
+            })),
+          ]}
+          value={selectedLocation}
+          onChange={(val) => setSelectedLocation(val || "all")}
+          searchable
+          clearable
+        />
+        <Select
+          label="Filtrar por Tipo de Movimiento"
+          placeholder="Todos los movimientos"
+          data={[
+            { value: "all", label: "Todos los movimientos" },
+            { value: "INPUT", label: "Entradas" },
+            { value: "OUTPUT", label: "Salidas" },
+            { value: "TRANSFER", label: "Transferencias" },
+          ]}
+          value={selectedType}
+          onChange={(val) => setSelectedType(val || "all")}
+          clearable
+        />
+      </div>
+
+      <div className="overflow-x-auto rounded-[8px] border border-[var(--ds-border)]">
+        <table className="w-full text-left border-collapse text-[0.875rem]">
+          <thead>
+            <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)]">
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">ID</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Fecha</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Tipo</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Origen</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Destino</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Artículo</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Cantidad</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Estado</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)] text-right">Acciones</th>
             </tr>
-          ))}
-          {data.length === 0 && (
-            <tr>
-              <td colSpan={7} className="text-center py-8 text-[var(--ds-muted)]">
-                No hay movimientos registrados.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredData.map((item, idx) => (
+              <tr key={item.id_movimiento} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
+                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.fecha_movimiento || item.created_at || Date.now()).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">
+                  {item.tipo === 'INPUT' ? 'Entrada' : item.tipo === 'OUTPUT' ? 'Salida' : item.tipo === 'TRANSFER' || item.tipo === 'TRANSFERENCIA' ? 'Transferencia' : item.tipo}
+                </td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.originLocation?.nombre || item.originLocation?.name || '—'}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.destinationLocation?.nombre || item.destinationLocation?.name || '—'}</td>
+                <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
+                <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
+                <td className="px-4 py-3 text-right">
+                  <Group justify="flex-end" gap="xs">
+                    {item.estado === 'PENDING' && (
+                      <ButtonPrimary onClick={() => updateStatus(item.id_movimiento, 'COMPLETED')}>
+                        Completar
+                      </ButtonPrimary>
+                    )}
+                    {item.estado === 'COMPLETED' && (
+                      <ButtonDanger onClick={() => cancelMovement(item.id_movimiento)}>
+                        Anular
+                      </ButtonDanger>
+                    )}
+                  </Group>
+                </td>
+              </tr>
+            ))}
+            {filteredData.length === 0 && (
+              <tr>
+                <td colSpan={9} className="text-center py-8 text-[var(--ds-muted)]">
+                  No hay movimientos registrados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
