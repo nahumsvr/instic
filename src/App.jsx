@@ -1,28 +1,32 @@
 import { Routes, Route, Navigate } from "react-router";
-import LoginPage from "./pages/LoginPage";
+import Movimientos from "./pages/Movements";
+import LoginPage from "./pages/Login";
+import InventoryPage from "./pages/MasterInventory";
+import MobileWarehouse from "./pages/MobileWarehouse";
+import DashboardPage from "./pages/Dashboard";
+import SettingsPage from "./pages/Settings";
+import AdministrationPage from "./pages/Administration";
+import AppLayout from "./layouts/AppLayout";
 
 /**
  * Enrutador principal de la aplicación.
- * Rutas actuales:
- *  /        → redirige a /login
- *  /login   → pantalla de inicio de sesión
- *
- * Próximas rutas (agregar aquí):
- *  /dashboard  → panel del administrador
- *  /scan       → pantalla de escaneo del empleado
+ * Rutas públicas: /login
+ * Rutas con sidebar (AppLayout): /dashboard, /inventory, /movements, /mobile-warehouse, /settings
  */
 function App() {
   return (
     <Routes>
-      {/* Ruta raíz: redirige al login */}
       <Route path="/" element={<Navigate to="/login" replace />} />
-
-      {/* Pantalla de login */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Rutas futuras — descomentar al implementar */}
-      {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
-      {/* <Route path="/scan" element={<ScanPage />} /> */}
+      <Route element={<AppLayout />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/movements" element={<Movimientos />} />
+        <Route path="/mobile-warehouse" element={<MobileWarehouse />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/admin" element={<AdministrationPage />} />
+      </Route>
     </Routes>
   );
 }

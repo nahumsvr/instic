@@ -122,6 +122,16 @@ code {
   --ds-danger-bg: #FEF2F2;
   --ds-danger-border: #FECACA;
   --ds-danger-text: #B91C1C;
+  --ds-warning-bg: #FFFBEB;
+  --ds-warning-border: #FDE68A;
+  --ds-warning-text: #B45309;
+  --ds-sidebar: #FAFAFA;
+  --ds-info-bg: #EFF6FF;
+  --ds-info-border: #BFDBFE;
+  --ds-info-text: #1D4ED8;
+  --ds-success-bg: #F0FDF4;
+  --ds-success-border: #BBF7D0;
+  --ds-success-text: #15803D;
 }
 
 [data-mantine-color-scheme="dark"] {
@@ -137,6 +147,16 @@ code {
   --ds-danger-bg: #450A0A;
   --ds-danger-border: #7F1D1D;
   --ds-danger-text: #FCA5A5;
+  --ds-warning-bg: #451A03;
+  --ds-warning-border: #78350F;
+  --ds-warning-text: #FDE047;
+  --ds-sidebar: #141414;
+  --ds-info-bg: #1E3A8A;
+  --ds-info-border: #1E40AF;
+  --ds-info-text: #93C5FD;
+  --ds-success-bg: #052E16;
+  --ds-success-border: #166534;
+  --ds-success-text: #86EFAC;
 }
 
 body {
