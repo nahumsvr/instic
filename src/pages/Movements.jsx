@@ -287,7 +287,13 @@ function Historial() {
             {filteredData.map((item, idx) => (
               <tr key={item.id_movimiento} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
                 <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.id_movimiento}</td>
-                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{new Date(item.fecha_movimiento || item.created_at || Date.now()).toLocaleDateString()}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-text)]">
+                  {(() => {
+                    const d = new Date(item.fecha_movimiento || item.created_at || Date.now());
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                  })()}
+                </td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">
                   {item.tipo === 'INPUT' ? 'Entrada' : item.tipo === 'OUTPUT' ? 'Salida' : item.tipo === 'TRANSFER' || item.tipo === 'TRANSFERENCIA' ? 'Transferencia' : item.tipo}
                 </td>
