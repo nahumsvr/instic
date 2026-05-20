@@ -4,9 +4,43 @@ import { toast } from "sonner";
 import QRCodeModule from "react-qr-code";
 const QRCode = QRCodeModule.default || QRCodeModule;
 import QrScanner from "../components/QrScanner";
-import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare } from "@gravity-ui/icons";
+import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare, Copy, Check } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
 import { getInitialWarehouseLocation } from "../utils/warehouseLocation";
+
+/* ================= COPY CODE BUTTON ================= */
+function CopyCodeButton({ code }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      toast.success("Código copiado al portapapeles.");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("No se pudo copiar el código. Cópialo manualmente.");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      title={copied ? "¡Copiado!" : "Copiar código"}
+      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md border text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out whitespace-nowrap"
+      style={{
+        borderColor: copied ? "rgba(16, 185, 129, 0.5)" : "var(--ds-border)",
+        background: copied
+          ? "linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.04) 100%), var(--ds-surface)"
+          : "var(--ds-surface)",
+        color: copied ? "rgba(16, 185, 129, 1)" : "var(--ds-text)",
+      }}
+    >
+      {copied ? <Check width={15} height={15} /> : <Copy width={15} height={15} />}
+      {copied ? "Copiado" : "Copiar"}
+    </button>
+  );
+}
 
 const SECTIONS = [
   { id: "historial", label: "Historial", title: "Historial de Operaciones", icon: Clock },
@@ -859,7 +893,6 @@ function Ordenes() {
         <table className="w-full text-left border-collapse text-[0.875rem]">
           <thead>
             <tr className="bg-[var(--ds-bg)] border-b border-[var(--ds-border)]">
-              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">QR Code</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Artículo</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Cantidad</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Origen</th>
@@ -871,7 +904,6 @@ function Ordenes() {
           <tbody>
             {filteredOrders.map((item, idx) => (
               <tr key={item.id_orden} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)] w-50">{item.qr_code?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
                 <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.nombre || item.origin?.name || item.originId}</td>
@@ -948,11 +980,23 @@ function Ordenes() {
             <div className="flex justify-center">
               <div
                 id="qr-print-area"
-                className="bg-white p-4 rounded-lg border border-[var(--ds-border)] flex flex-col items-center gap-3"
+                className="bg-white p-4 rounded-lg border border-[var(--ds-border)] flex flex-col items-center gap-3 max-w-full"
+                style={{ width: 212 }}
               >
-                <QRCode value={generatedQr} size={180} />
-                <p className="font-mono text-xs text-[#111111] mt-1">{generatedQr}</p>
+                <QRCode value={generatedQr} size={180} style={{ display: "block", flexShrink: 0 }} />
               </div>
+            </div>
+
+            {/* Copiar código */}
+            <div className="flex items-center gap-2">
+              <div
+                className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg)]"
+              >
+                <span className="flex-1 min-w-0 font-mono text-sm text-[var(--ds-text)] truncate select-all">
+                  {generatedQr}
+                </span>
+              </div>
+              <CopyCodeButton code={generatedQr} />
             </div>
 
             {/* Información del pedido */}
