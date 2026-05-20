@@ -74,18 +74,16 @@ export default function Dashboard() {
   const [pedirLoading, setPedirLoading] = useState({});
 
   const handlePedir = async (alerta) => {
-    const articleId =
-      alerta.article?.id ?? alerta.articleId ?? alerta.article_id;
-    const articleName =
-      alerta.article?.name ?? alerta.articleName ?? `Artículo ${articleId}`;
+    const articleId = alerta.article?.id;
+    const articleName = alerta.article?.name;
 
     setPedirLoading((prev) => ({ ...prev, [articleId]: true }));
     try {
       const payload = {
         articleId,
         destinationId:
-          alerta.location?.id ?? alerta.locationId ?? alerta.location_id,
-        quantity: alerta.deficit ?? alerta.deficitQuantity ?? 1,
+          alerta.location?.id,
+        quantity: alerta.deficit ?? 1,
         type: "MANUAL",
       };
 
@@ -186,344 +184,344 @@ export default function Dashboard() {
       </h1>
 
       <div className="flex flex-col gap-4">
-      {/* ── KPI Cards ── */}
-      <Grid mb="3xl">
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Card
-            withBorder
-            radius="md"
-            p="lg"
-            style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)" }}
-          >
-            <Group justify="space-between" mb="xs">
-              <Text c="var(--ds-muted)" size="sm" fw={500}>
-                Total Stock
+        {/* ── KPI Cards ── */}
+        <Grid mb="3xl">
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Card
+              withBorder
+              radius="md"
+              p="lg"
+              style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)" }}
+            >
+              <Group justify="space-between" mb="xs">
+                <Text c="var(--ds-muted)" size="sm" fw={500}>
+                  Total Stock
+                </Text>
+                <Boxes3 width={20} height={20} style={{ color: "var(--ds-muted)" }} />
+              </Group>
+              <Text fw={700} style={{ color: "var(--ds-text)", fontSize: "2rem" }}>
+                {totalStock.toLocaleString()}
               </Text>
-              <Boxes3 width={20} height={20} style={{ color: "var(--ds-muted)" }} />
-            </Group>
-            <Text fw={700} style={{ color: "var(--ds-text)", fontSize: "2rem" }}>
-              {totalStock.toLocaleString()}
-            </Text>
-          </Card>
-        </Grid.Col>
+            </Card>
+          </Grid.Col>
 
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Card
-            withBorder
-            radius="md"
-            p="lg"
-            style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)" }}
-          >
-            <Group justify="space-between" mb="xs">
-              <Text c="var(--ds-muted)" size="sm" fw={500}>
-                Valor Inventario (MXN)
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Card
+              withBorder
+              radius="md"
+              p="lg"
+              style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)" }}
+            >
+              <Group justify="space-between" mb="xs">
+                <Text c="var(--ds-muted)" size="sm" fw={500}>
+                  Valor Inventario (MXN)
+                </Text>
+                <CircleDollar width={20} height={20} style={{ color: "var(--ds-muted)" }} />
+              </Group>
+              <Text fw={700} style={{ color: "var(--ds-text)", fontSize: "2rem" }}>
+                ${valorInventario.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
-              <CircleDollar width={20} height={20} style={{ color: "var(--ds-muted)" }} />
-            </Group>
-            <Text fw={700} style={{ color: "var(--ds-text)", fontSize: "2rem" }}>
-              ${valorInventario.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </Text>
-          </Card>
-        </Grid.Col>
+            </Card>
+          </Grid.Col>
 
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Card
-            withBorder
-            radius="md"
-            p="lg"
-            style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)" }}
-          >
-            <Group justify="space-between" mb="xs">
-              <Text c="var(--ds-muted)" size="sm" fw={500}>
-                Órdenes Pendientes
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Card
+              withBorder
+              radius="md"
+              p="lg"
+              style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)" }}
+            >
+              <Group justify="space-between" mb="xs">
+                <Text c="var(--ds-muted)" size="sm" fw={500}>
+                  Órdenes Pendientes
+                </Text>
+                <ShoppingCart width={20} height={20} style={{ color: "var(--ds-muted)" }} />
+              </Group>
+              <Text fw={700} style={{ color: "var(--ds-text)", fontSize: "2rem" }}>
+                {ordenesPendientes}
               </Text>
-              <ShoppingCart width={20} height={20} style={{ color: "var(--ds-muted)" }} />
-            </Group>
-            <Text fw={700} style={{ color: "var(--ds-text)", fontSize: "2rem" }}>
-              {ordenesPendientes}
-            </Text>
-          </Card>
-        </Grid.Col>
-      </Grid>
+            </Card>
+          </Grid.Col>
+        </Grid>
 
-      {/* ── Gráfico + Alertas ── */}
-      <Grid>
-        {/* Gráfico de Movimientos */}
-        <Grid.Col span={{ base: 12, md: 8 }}>
-          <Card
-            withBorder
-            radius="md"
-            p="lg"
-            style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)", height: "100%" }}
-          >
-            <Title order={3} size="h4" mb="xl" style={{ color: "var(--ds-text)" }}>
-              Entradas vs Salidas (Últimos 7 días)
-            </Title>
-            <div style={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="entradasGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--ds-chart-entradas)" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="var(--ds-chart-entradas)" stopOpacity={0.05} />
-                    </linearGradient>
-                    <linearGradient id="salidasGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--ds-chart-salidas)" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="var(--ds-chart-salidas)" stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--ds-border)" />
-                  <XAxis
-                    dataKey="name"
-                    stroke="var(--ds-muted)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    dy={8}
-                  />
-                  <YAxis
-                    stroke="var(--ds-muted)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                    dx={-8}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--ds-surface)",
-                      borderColor: "var(--ds-border)",
-                      borderRadius: "8px",
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                      fontFamily: "var(--font-sans, Inter, sans-serif)",
-                      fontSize: "12px",
-                      padding: "8px 12px",
-                    }}
-                    labelStyle={{
-                      fontWeight: 600,
-                      color: "var(--ds-text)",
-                      marginBottom: "4px",
-                    }}
-                    itemStyle={{
-                      padding: "2px 0",
-                    }}
-                    cursor={{ fill: "var(--ds-border)", opacity: 0.15 }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ 
-                      fontSize: "12px", 
-                      color: "var(--ds-muted)",
-                      paddingTop: "12px"
-                    }} 
-                    iconType="circle"
-                    iconSize={8}
-                  />
-                  <Bar 
-                    dataKey="entradas" 
-                    name="Entradas" 
-                    fill="url(#entradasGrad)" 
-                    stroke="var(--ds-chart-entradas)" 
-                    strokeWidth={2}
-                    radius={[4, 4, 0, 0]} 
-                    barSize={24} 
-                  />
-                  <Bar 
-                    dataKey="salidas" 
-                    name="Salidas" 
-                    fill="url(#salidasGrad)" 
-                    stroke="var(--ds-chart-salidas)" 
-                    strokeWidth={2}
-                    radius={[4, 4, 0, 0]} 
-                    barSize={24} 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Grid.Col>
+        {/* ── Gráfico + Alertas ── */}
+        <Grid>
+          {/* Gráfico de Movimientos */}
+          <Grid.Col span={{ base: 12, md: 8 }}>
+            <Card
+              withBorder
+              radius="md"
+              p="lg"
+              style={{ borderColor: "var(--ds-border)", backgroundColor: "var(--ds-surface)", height: "100%" }}
+            >
+              <Title order={3} size="h4" mb="xl" style={{ color: "var(--ds-text)" }}>
+                Entradas vs Salidas (Últimos 7 días)
+              </Title>
+              <div style={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="entradasGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--ds-chart-entradas)" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="var(--ds-chart-entradas)" stopOpacity={0.05} />
+                      </linearGradient>
+                      <linearGradient id="salidasGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--ds-chart-salidas)" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="var(--ds-chart-salidas)" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--ds-border)" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--ds-muted)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      dy={8}
+                    />
+                    <YAxis
+                      stroke="var(--ds-muted)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      allowDecimals={false}
+                      dx={-8}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--ds-surface)",
+                        borderColor: "var(--ds-border)",
+                        borderRadius: "8px",
+                        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                        fontFamily: "var(--font-sans, Inter, sans-serif)",
+                        fontSize: "12px",
+                        padding: "8px 12px",
+                      }}
+                      labelStyle={{
+                        fontWeight: 600,
+                        color: "var(--ds-text)",
+                        marginBottom: "4px",
+                      }}
+                      itemStyle={{
+                        padding: "2px 0",
+                      }}
+                      cursor={{ fill: "var(--ds-border)", opacity: 0.15 }}
+                    />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: "12px",
+                        color: "var(--ds-muted)",
+                        paddingTop: "12px"
+                      }}
+                      iconType="circle"
+                      iconSize={8}
+                    />
+                    <Bar
+                      dataKey="entradas"
+                      name="Entradas"
+                      fill="url(#entradasGrad)"
+                      stroke="var(--ds-chart-entradas)"
+                      strokeWidth={2}
+                      radius={[4, 4, 0, 0]}
+                      barSize={24}
+                    />
+                    <Bar
+                      dataKey="salidas"
+                      name="Salidas"
+                      fill="url(#salidasGrad)"
+                      stroke="var(--ds-chart-salidas)"
+                      strokeWidth={2}
+                      radius={[4, 4, 0, 0]}
+                      barSize={24}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </Grid.Col>
 
-        {/* Lista de Alertas */}
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <Card
-            withBorder
-            radius="md"
-            p="lg"
-            style={{
-              borderColor: "var(--ds-border)",
-              backgroundColor: "var(--ds-surface)",
-              height: "100%",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Title order={3} size="h4" mb="md" style={{ color: "var(--ds-text)" }}>
-              Alertas Recientes
-            </Title>
+          {/* Lista de Alertas */}
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Card
+              withBorder
+              radius="md"
+              p="lg"
+              style={{
+                borderColor: "var(--ds-border)",
+                backgroundColor: "var(--ds-surface)",
+                height: "100%",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Title order={3} size="h4" mb="md" style={{ color: "var(--ds-text)" }}>
+                Alertas Recientes
+              </Title>
 
-            {/* Usamos Box de Mantine como contenedor scrolleable */}
-            <Box style={{ overflowY: "auto", flex: 1, paddingRight: "4px" }}>
-              <Stack gap="sm">
-                {data.alerts.length === 0 ? (
-                  <Text c="var(--ds-muted)" size="sm" ta="center" py="xl">
-                    No hay alertas activas
-                  </Text>
-                ) : (
-                  data.alerts.map((alerta) => {
-                    const articleId =
-                      alerta.article?.id ??
-                      alerta.articleId ??
-                      alerta.article_id;
+              {/* Usamos Box de Mantine como contenedor scrolleable */}
+              <Box style={{ overflowY: "auto", flex: 1, paddingRight: "4px" }}>
+                <Stack gap="sm">
+                  {data.alerts.length === 0 ? (
+                    <Text c="var(--ds-muted)" size="sm" ta="center" py="xl">
+                      No hay alertas activas
+                    </Text>
+                  ) : (
+                    data.alerts.map((alerta) => {
+                      const articleId =
+                        alerta.article?.id ??
+                        alerta.articleId ??
+                        alerta.article_id;
 
-                    // Cruzar con órdenes activas para determinar si ya está "en camino"
-                    const hasActiveOrder = data.orders.some(
-                      (o) => {
-                        const ordArticleId =
-                          o.article?.id ??
-                          o.articleId ??
-                          o.article_id;
-                        return (
-                          ordArticleId === articleId &&
-                          ACTIVE_ORDER_STATUSES.includes(o.status ?? o.estado)
-                        );
+                      // Cruzar con órdenes activas para determinar si ya está "en camino"
+                      const hasActiveOrder = data.orders.some(
+                        (o) => {
+                          const ordArticleId =
+                            o.article?.id ??
+                            o.articleId ??
+                            o.article_id;
+                          return (
+                            ordArticleId === articleId &&
+                            ACTIVE_ORDER_STATUSES.includes(o.status ?? o.estado)
+                          );
+                        }
+                      );
+
+                      // Determinar variante visual de la alerta
+                      let borderColor = "var(--ds-border)";
+                      let isBlue = false;
+                      let isRed = false;
+                      let isYellow = false;
+
+                      // Normalizar nombres de campo que el backend puede devolver en inglés o español
+                      const stockActual =
+                        alerta.stockActual ??
+                        alerta.currentStock ??
+                        alerta.stock ??
+                        0;
+                      const severidad =
+                        alerta.severidad ??
+                        alerta.severity ??
+                        "";
+
+                      const esCritico =
+                        stockActual === 0 || severidad === "CRITICO" || severidad === "CRITICAL";
+
+                      if (esCritico) {
+                        if (hasActiveOrder) {
+                          isBlue = true;
+                          borderColor = "#3B82F6";
+                        } else {
+                          isRed = true;
+                          borderColor = "#EF4444";
+                        }
+                      } else if (
+                        severidad === "ALTO" || severidad === "HIGH" ||
+                        severidad === "MEDIO" || severidad === "MEDIUM"
+                      ) {
+                        isYellow = true;
+                        borderColor = "var(--ds-warning-text)";
                       }
-                    );
 
-                    // Determinar variante visual de la alerta
-                    let borderColor = "var(--ds-border)";
-                    let isBlue = false;
-                    let isRed = false;
-                    let isYellow = false;
-
-                    // Normalizar nombres de campo que el backend puede devolver en inglés o español
-                    const stockActual =
-                      alerta.stockActual ??
-                      alerta.currentStock ??
-                      alerta.stock ??
-                      0;
-                    const severidad =
-                      alerta.severidad ??
-                      alerta.severity ??
-                      "";
-
-                    const esCritico =
-                      stockActual === 0 || severidad === "CRITICO" || severidad === "CRITICAL";
-
-                    if (esCritico) {
-                      if (hasActiveOrder) {
-                        isBlue = true;
-                        borderColor = "#3B82F6";
-                      } else {
-                        isRed = true;
-                        borderColor = "#EF4444";
-                      }
-                    } else if (
-                      severidad === "ALTO" || severidad === "HIGH" ||
-                      severidad === "MEDIO" || severidad === "MEDIUM"
-                    ) {
-                      isYellow = true;
-                      borderColor = "var(--ds-warning-text)";
-                    }
-
-                    return (
-                      <Card
-                        key={alerta.id ?? articleId}
-                        withBorder
-                        radius="md"
-                        p="sm"
-                        style={{
-                          borderLeft: `4px solid ${borderColor}`,
-                          backgroundColor: isYellow
-                            ? "var(--ds-warning-bg)"
-                            : "var(--ds-bg)",
-                          borderColor: isYellow
-                            ? "var(--ds-warning-border)"
-                            : undefined,
-                        }}
-                      >
-                        <Group justify="space-between" align="flex-start" wrap="nowrap">
-                          <div>
-                            <Text size="sm" fw={600} style={{ color: "var(--ds-text)" }}>
-                              {alerta.article?.name ||
-                                alerta.articleName ||
-                                `Artículo ${articleId}`}
-                            </Text>
-                            <Text size="xs" c="var(--ds-muted)" mt={2}>
-                              Ubicación:{" "}
-                              {alerta.location?.name ||
-                                alerta.locationName ||
-                                "General"}
-                            </Text>
-                            <Text size="xs" c="var(--ds-muted)" mt={2}>
-                              Stock actual:{" "}
-                              <Text
-                                component="span"
-                                fw={600}
-                                style={{ color: isRed ? "#EF4444" : "var(--ds-text)" }}
-                              >
-                                {stockActual}
+                      return (
+                        <Card
+                          key={alerta.id ?? articleId}
+                          withBorder
+                          radius="md"
+                          p="sm"
+                          style={{
+                            borderLeft: `4px solid ${borderColor}`,
+                            backgroundColor: isYellow
+                              ? "var(--ds-warning-bg)"
+                              : "var(--ds-bg)",
+                            borderColor: isYellow
+                              ? "var(--ds-warning-border)"
+                              : undefined,
+                          }}
+                        >
+                          <Group justify="space-between" align="flex-start" wrap="nowrap">
+                            <div>
+                              <Text size="sm" fw={600} style={{ color: "var(--ds-text)" }}>
+                                {alerta.article?.name ||
+                                  alerta.articleName ||
+                                  `Artículo ${articleId}`}
                               </Text>
-                            </Text>
-                            {(alerta.deficit ?? alerta.deficitQuantity) != null && (
                               <Text size="xs" c="var(--ds-muted)" mt={2}>
-                                Déficit:{" "}
-                                <Text component="span" fw={600} style={{ color: isRed ? "#EF4444" : "var(--ds-text)" }}>
-                                  {alerta.deficit ?? alerta.deficitQuantity}
+                                Ubicación:{" "}
+                                {alerta.location?.name ||
+                                  alerta.locationName ||
+                                  "General"}
+                              </Text>
+                              <Text size="xs" c="var(--ds-muted)" mt={2}>
+                                Stock actual:{" "}
+                                <Text
+                                  component="span"
+                                  fw={600}
+                                  style={{ color: isRed ? "#EF4444" : "var(--ds-text)" }}
+                                >
+                                  {stockActual}
                                 </Text>
                               </Text>
+                              {(alerta.deficit ?? alerta.deficitQuantity) != null && (
+                                <Text size="xs" c="var(--ds-muted)" mt={2}>
+                                  Déficit:{" "}
+                                  <Text component="span" fw={600} style={{ color: isRed ? "#EF4444" : "var(--ds-text)" }}>
+                                    {alerta.deficit ?? alerta.deficitQuantity}
+                                  </Text>
+                                </Text>
+                              )}
+                            </div>
+
+                            {/* Botón Pedir — solo alerta roja (crítico sin orden activa) */}
+                            {isRed && (
+                              <Button
+                                size="xs"
+                                variant="filled"
+                                loading={!!pedirLoading[articleId]}
+                                disabled={!!pedirLoading[articleId]}
+                                onClick={() => handlePedir(alerta)}
+                                style={{
+                                  backgroundColor: "var(--ds-accent)",
+                                  color: "var(--ds-accent-fg)",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                Pedir
+                              </Button>
                             )}
-                          </div>
 
-                          {/* Botón Pedir — solo alerta roja (crítico sin orden activa) */}
-                          {isRed && (
-                            <Button
-                              size="xs"
-                              variant="filled"
-                              loading={!!pedirLoading[articleId]}
-                              disabled={!!pedirLoading[articleId]}
-                              onClick={() => handlePedir(alerta)}
-                              style={{
-                                backgroundColor: "var(--ds-accent)",
-                                color: "var(--ds-accent-fg)",
-                                flexShrink: 0,
-                              }}
-                            >
-                              Pedir
-                            </Button>
-                          )}
+                            {/* Badge "En camino" — alerta azul (orden ya creada) */}
+                            {isBlue && (
+                              <Badge color="blue" variant="light" size="xs">
+                                En camino
+                              </Badge>
+                            )}
 
-                          {/* Badge "En camino" — alerta azul (orden ya creada) */}
-                          {isBlue && (
-                            <Badge color="blue" variant="light" size="xs">
-                              En camino
-                            </Badge>
-                          )}
-
-                          {/* Badge "Stock Bajo" — alerta de advertencia */}
-                          {isYellow && (
-                            <span
-                              className="inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium border"
-                              style={{
-                                backgroundColor: "var(--ds-surface)",
-                                color: "var(--ds-warning-text)",
-                                borderColor: "var(--ds-warning-border)",
-                              }}
-                            >
-                              {severidad === "ALTO" || severidad === "HIGH"
-                                ? "Stock Bajo"
-                                : "Stock Medio"}
-                            </span>
-                          )}
-                        </Group>
-                      </Card>
-                    );
-                  })
-                )}
-              </Stack>
-            </Box>
-          </Card>
-        </Grid.Col>
-      </Grid>
+                            {/* Badge "Stock Bajo" — alerta de advertencia */}
+                            {isYellow && (
+                              <span
+                                className="inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium border"
+                                style={{
+                                  backgroundColor: "var(--ds-surface)",
+                                  color: "var(--ds-warning-text)",
+                                  borderColor: "var(--ds-warning-border)",
+                                }}
+                              >
+                                {severidad === "ALTO" || severidad === "HIGH"
+                                  ? "Stock Bajo"
+                                  : "Stock Medio"}
+                              </span>
+                            )}
+                          </Group>
+                        </Card>
+                      );
+                    })
+                  )}
+                </Stack>
+              </Box>
+            </Card>
+          </Grid.Col>
+        </Grid>
       </div>
     </Container>
   );
