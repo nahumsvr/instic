@@ -255,8 +255,8 @@ export default function MobileWarehouse() {
 
       // Filtrar únicamente por ubicación del almacén seleccionado
       const filtered = data.filter((o) => {
-        const destId = o.destinationId ?? o.id_destino ?? o.destination?.id_ubicacion ?? o.destination?.id;
-        return String(destId) === String(locationId);
+        const originId = o.origin?.id_ubicacion;
+        return String(originId) === String(locationId);
       });
 
       setOrders(filtered);
