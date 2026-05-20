@@ -58,7 +58,7 @@ const BadgeStatus = ({ status }) => {
   }
 
   return (
-    <span 
+    <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
       style={style}
     >
@@ -373,7 +373,7 @@ export default function MobileWarehouse() {
             </Text>
           </div>
           <Group gap="xs">
-            <span 
+            <span
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
                 border: "1px solid rgba(99, 102, 241, 0.4)",
@@ -473,8 +473,8 @@ export default function MobileWarehouse() {
                     {itemCount > 0
                       ? `${itemCount} artículo${itemCount !== 1 ? "s" : ""}`
                       : order.cantidad
-                      ? `${order.cantidad} unidades`
-                      : "—"}
+                        ? `${order.cantidad} unidades`
+                        : "—"}
                   </Text>
 
                   <Button
@@ -526,17 +526,9 @@ export default function MobileWarehouse() {
             }}
           >
             {scannerOpen && (
-              <ReactZxingScanner
-                onUpdate={(result) => {
-                  if (result) {
-                    const text =
-                      typeof result.getText === "function"
-                        ? result.getText()
-                        : String(result);
-                    if (text) processScannedCode(text);
-                  }
-                }}
-                onError={() => toast.error("Error al acceder a la cámara")}
+              <QrScanner
+                onScan={(text) => processScannedCode(text)}
+                onError={() => toast.error("Error al acceder a la cámara. Verifica los permisos del navegador.")}
                 width="100%"
                 height="100%"
               />
