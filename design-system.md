@@ -118,7 +118,73 @@ Sistema de espaciado de base 4px.
 - Borde: `1px solid #FECACA`
 - Hover: fondo `#FEF2F2`
 
-#### Reglas
+#### Aurora-button (acción contextual de color)
+
+Variante premium para **acciones primarias de creación** (`+ Nuevo`, `+ Agregar`). Usa el color semántico del contexto actual — la misma paleta Aurora de la sección 8 — para conectar visualmente el botón con la página o acción.
+
+```css
+/* Estructura base */
+height: 38px;
+padding: 0 16px;
+border-radius: 6px;
+font-weight: 600;
+font-size: 0.875rem;
+border: 1px solid rgba(R, G, B, 0.5);
+background: linear-gradient(135deg, rgba(R, G, B, 0.15) 0%, rgba(R, G, B, 0.04) 100%), var(--ds-surface);
+color: rgb(R, G, B);
+box-shadow: 0 0 0 1px rgba(R, G, B, 0.08), 0 2px 8px rgba(R, G, B, 0.15);
+
+/* Hover */
+background: linear-gradient(135deg, rgba(R, G, B, 0.22) 0%, rgba(R, G, B, 0.08) 100%), var(--ds-surface);
+box-shadow: 0 0 0 1px rgba(R, G, B, 0.15), 0 4px 16px rgba(R, G, B, 0.25);
+
+/* Active / click */
+transform: scale(0.95);
+```
+
+##### Colores por contexto
+
+| Contexto              | Color Base     | RGB                |
+| --------------------- | -------------- | ------------------ |
+| Dashboard             | Aura Indigo    | `99, 102, 241`     |
+| Inventario / Artículos | Aura Sky      | `14, 165, 233`     |
+| Movimientos           | Aura Emerald   | `16, 185, 129`     |
+| Almacén móvil         | Aura Amber     | `245, 158, 11`     |
+| Administración        | Aura Rose      | `244, 63, 94`      |
+
+##### Implementación en JSX (nativo)
+
+```jsx
+<button
+  onClick={handler}
+  className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+  style={{
+    border: "1px solid rgba(14, 165, 233, 0.5)",
+    background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)",
+    color: "rgba(14, 165, 233, 1)",
+    boxShadow: "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)",
+  }}
+  onMouseEnter={e => {
+    e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.08) 100%), var(--ds-surface)";
+    e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.15), 0 4px 16px rgba(14, 165, 233, 0.25)";
+  }}
+  onMouseLeave={e => {
+    e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)";
+    e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)";
+  }}
+>
+  <Plus width={16} height={16} />
+  Nuevo Artículo
+</button>
+```
+
+##### Reglas de uso
+- Usar **solo para acciones de creación** (`+ Nuevo`, `+ Agregar`). No usar en acciones de edición ni destructivas.
+- El color debe corresponder al contexto de la página (ver tabla de colores arriba).
+- Máximo un botón Aurora por sección.
+- No combinar con el botón Primario (`#111111`) en la misma barra de acciones.
+
+#### Reglas generales
 - Un solo botón primario por sección/formulario.
 - No usar color de acento en botones secundarios.
 - Labels en **infinitivo**: `Guardar`, `Eliminar`, `Confirmar`. No `Guardar cambios ✅`.
