@@ -108,29 +108,57 @@ export default function MasterInventory() {
         setOpened(true);
     };
 
-    const handleEdit = (item) => {
+    const handleEdit = async (item) => {
         setEditingId(item.id_articulo);
 
-        // Si hay una ubicación seleccionada en el filtro, pre-cargar su stock config
-        let stockConfigs = [];
-        if (storeFilter) {
-            const locationId = Number(storeFilter);
-            stockConfigs = [{
-                locationId,
-                minStock: item.min_stock ?? item.minStock ?? item.stock_minimo ?? 0,
-                maxStock: item.max_stock ?? item.maxStock ?? item.stock_maximo ?? 0,
-            }];
-        }
-
-        setFormData({
+        // Datos base del artículo
+        const base = {
             code: item.codigo,
             name: item.nombre,
             category: item.category || "General",
             size: item.size || "N/A",
             unitCost: item.costo_unitario || 0,
             unitPrice: item.precio_unitario || 0,
-            stockConfigs,
-        });
+            stockConfigs: [],
+        };
+
+        // Si hay una ubicación seleccionada, consultar el inventario para obtener min/max stock reales
+        if (storeFilter) {
+            const locationId = Number(storeFilter);
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/inventory?articleId=${item.id_articulo}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (res.ok) {
+                    const inv = await res.json();
+                    // El endpoint devuelve { locations: [{ location: { id }, stockActual, minStock, maxStock, ... }] }
+                    const locData = (inv.locations ?? []).find(
+                        (l) => (l.location?.id ?? l.locationId) === locationId
+                    );
+                    base.stockConfigs = [{
+                        locationId,
+                        minStock: locData?.stockMinimo ?? locData?.min_stock ?? locData?.stock_minimo ?? 0,
+                        maxStock: locData?.stockMaximo ?? locData?.max_stock ?? locData?.stock_maximo ?? 0,
+                    }];
+                } else {
+                    // Fallback: intentar leer directo del item
+                    base.stockConfigs = [{
+                        locationId,
+                        minStock: item.min_stock ?? item.minStock ?? item.stock_minimo ?? 0,
+                        maxStock: item.max_stock ?? item.maxStock ?? item.stock_maximo ?? 0,
+                    }];
+                }
+            } catch {
+                base.stockConfigs = [{
+                    locationId,
+                    minStock: item.min_stock ?? item.minStock ?? item.stock_minimo ?? 0,
+                    maxStock: item.max_stock ?? item.maxStock ?? item.stock_maximo ?? 0,
+                }];
+            }
+        }
+
+        setFormData(base);
         setOpened(true);
     };
 
@@ -560,7 +588,6 @@ export default function MasterInventory() {
                             <div className="flex flex-col gap-3">
                                 {formData.stockConfigs.map((sc) => {
                                     const loc = locations.find((l) => l.id_ubicacion === sc.locationId);
-                                    console.log(sc)
                                     return (
                                         <div
                                             key={sc.locationId}
