@@ -42,10 +42,61 @@ function NavItem({ to, icon: Icon, label, end = false }) {
   );
 }
 
-/**
- * Menú lateral de navegación entre pantallas autenticadas.
- * Visible en desktop (md+); oculto en móvil para no interferir con vistas móviles.
- */
+/** Badge de rol del usuario. Sigue los colores semánticos del design system. */
+const ROLE_LABELS = {
+  ADMIN: "Administrador",
+  MANAGER: "Gerente",
+  EMPLOYEE: "Empleado",
+};
+
+const ROLE_STYLES = {
+  ADMIN: {
+    background: "var(--ds-info-bg)",
+    border: "var(--ds-info-border)",
+    color: "var(--ds-info-text)",
+  },
+  MANAGER: {
+    background: "var(--ds-warning-bg)",
+    border: "var(--ds-warning-border)",
+    color: "var(--ds-warning-text)",
+  },
+  EMPLOYEE: {
+    background: "var(--ds-success-bg)",
+    border: "var(--ds-success-border)",
+    color: "var(--ds-success-text)",
+  },
+};
+
+const DEFAULT_ROLE_STYLE = {
+  background: "var(--ds-surface)",
+  border: "var(--ds-border)",
+  color: "var(--ds-muted)",
+};
+
+function RoleBadge({ rol }) {
+  const key = (rol ?? "").toUpperCase();
+  const style = ROLE_STYLES[key] ?? DEFAULT_ROLE_STYLE;
+  const label = ROLE_LABELS[key] ?? rol ?? "—";
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontSize: "0.6875rem",
+        fontWeight: 500,
+        borderRadius: "999px",
+        padding: "2px 8px",
+        background: style.background,
+        border: `1px solid ${style.border}`,
+        color: style.color,
+        alignSelf: "flex-start",
+        fontFamily: "Inter, sans-serif",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function isAdmin(user) {
   const rol = user?.rol ?? user?.role ?? "";
   return rol === "ADMIN" || rol === "admin";
@@ -92,6 +143,26 @@ export default function Sidebar() {
       </nav>
 
       <Divider my="sm" color="var(--ds-border)" />
+
+      {/* Información del usuario autenticado */}
+      {user && (
+        <div className="px-3 mb-2 flex flex-col gap-1">
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              color: "var(--ds-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={user.email}
+          >
+            {user.email}
+          </span>
+          <RoleBadge rol={user.rol ?? user.role} />
+        </div>
+      )}
 
       <button
         type="button"
