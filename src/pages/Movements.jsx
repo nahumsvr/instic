@@ -24,7 +24,7 @@ const Card = ({ children, className = "" }) => (
 );
 
 const ButtonPrimary = ({ children, className = "", ...props }) => (
-  <button 
+  <button
     className={`bg-[var(--ds-accent)] text-[var(--ds-accent-fg)] hover:bg-[var(--ds-accent-hover)] border-none rounded-[6px] px-4 h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
     {...props}
   >
@@ -33,7 +33,7 @@ const ButtonPrimary = ({ children, className = "", ...props }) => (
 );
 
 const ButtonSecondary = ({ children, className = "", ...props }) => (
-  <button 
+  <button
     className={`bg-transparent text-[var(--ds-text)] hover:bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-[6px] px-4 h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
     {...props}
   >
@@ -89,7 +89,7 @@ const BadgeStatus = ({ status }) => {
   }
 
   return (
-    <span 
+    <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
       style={style}
     >
@@ -293,7 +293,7 @@ function Registrar() {
         quantity: Number(formData.quantity),
         status: formData.status
       };
-      
+
       if (type === 'input') {
         payload.destinationId = Number(formData.destinationId);
         if (formData.originId) payload.originId = Number(formData.originId);
@@ -315,10 +315,10 @@ function Registrar() {
       });
 
       if (!res.ok) {
-        const errJson = await res.json().catch(()=>({}));
+        const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.message || `Error ${res.status}`);
       }
-      
+
       toast.success("Movimiento registrado correctamente.");
       setFormData({ ...formData, quantity: 1, articleId: '' });
     } catch (err) {
@@ -335,9 +335,9 @@ function Registrar() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Select 
-        label="Tipo de Movimiento" 
-        value={type} 
+      <Select
+        label="Tipo de Movimiento"
+        value={type}
         onChange={(val) => setType(val)}
         data={[
           { value: 'input', label: 'Entrada' },
@@ -433,7 +433,7 @@ function Registrar() {
 function Ordenes() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [modalOpened, setModalOpened] = useState(false);
   const [qrModalOpened, setQrModalOpened] = useState(false);
   const [generatedQr, setGeneratedQr] = useState("");
@@ -449,7 +449,7 @@ function Ordenes() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${getToken()}` }});
+      const res = await fetch(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (!res.ok) throw new Error("Error al obtener órdenes");
       setOrders(await res.json());
     } catch (err) {
@@ -703,7 +703,7 @@ function Ordenes() {
           <tbody>
             {orders.map((item, idx) => (
               <tr key={item.id_orden} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
-                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)]">{item.qr_code?.split('/').pop() || '-'}</td>
+                <td className="px-4 py-3 font-mono text-[var(--ds-subtle)] w-50">{item.qr_code?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
                 <td className="px-4 py-3 font-mono text-[var(--ds-text)]">{item.cantidad}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.nombre || item.origin?.name || item.originId}</td>
@@ -724,28 +724,28 @@ function Ordenes() {
             label="Artículo"
             data={articles.map(a => ({ value: (a.id_articulo || a.id || '').toString(), label: `${a.codigo || a.code} - ${a.nombre || a.name}` }))}
             value={formData.articleId}
-            onChange={(v) => setFormData({...formData, articleId: v})}
+            onChange={(v) => setFormData({ ...formData, articleId: v })}
             required
             searchable
           />
           <NumberInput
             label="Cantidad"
             value={formData.quantity}
-            onChange={(v) => setFormData({...formData, quantity: v})}
+            onChange={(v) => setFormData({ ...formData, quantity: v })}
             min={1} required
           />
           <Select
             label="Origen (Proveedor / Almacén)"
             data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
             value={formData.originId}
-            onChange={(v) => setFormData({...formData, originId: v})}
+            onChange={(v) => setFormData({ ...formData, originId: v })}
             required
           />
           <Select
             label="Destino (Tienda)"
             data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
             value={formData.destinationId}
-            onChange={(v) => setFormData({...formData, destinationId: v})}
+            onChange={(v) => setFormData({ ...formData, destinationId: v })}
             required
           />
           <Group justify="flex-end" mt="xl">
@@ -832,10 +832,10 @@ function Ordenes() {
         )}
       </Modal>
 
-      <Modal 
-        opened={scannerOpened} 
-        onClose={() => setScannerOpened(false)} 
-        title="Escanear QR de Orden" 
+      <Modal
+        opened={scannerOpened}
+        onClose={() => setScannerOpened(false)}
+        title="Escanear QR de Orden"
         size="md"
         styles={{
           content: { backgroundColor: "var(--ds-surface)" },
@@ -892,7 +892,7 @@ function Ordenes() {
             <div className="bg-[var(--ds-bg)] p-4 rounded-lg border border-[var(--ds-border)]">
               <p className="text-sm text-[var(--ds-muted)] mb-1">Artículo</p>
               <p className="font-medium text-[var(--ds-text)] mb-3">{scannedOrder.article?.nombre || scannedOrder.article?.name}</p>
-              
+
               <Group grow>
                 <div>
                   <p className="text-sm text-[var(--ds-muted)] mb-1">Cantidad</p>
