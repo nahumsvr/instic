@@ -783,6 +783,24 @@ export default function MobileWarehouse() {
                     </Text>
                   )}
 
+                  {/* Ubicación de destino */}
+                  {(() => {
+                    const destName =
+                      order.destination?.nombre ??
+                      order.destination?.name ??
+                      order.destinationName ??
+                      null;
+                    return destName ? (
+                      <div
+                        className="inline-flex items-center gap-1.5 mb-3"
+                        style={{ color: "var(--ds-muted)", fontSize: "0.8125rem" }}
+                      >
+                        <MapPin width={13} height={13} style={{ flexShrink: 0 }} />
+                        <span>{destName}</span>
+                      </div>
+                    ) : null;
+                  })()}
+
                   <Text size="sm" mb="md" c="dimmed">
                     {itemCount > 0
                       ? `${itemCount} artículo${itemCount !== 1 ? "s" : ""}`

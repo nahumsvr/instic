@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Container, Title, Card, Text, Group, Badge, Button, Loader, Alert, Stack, Grid } from "@mantine/core";
+import { Box, Container, Title, Card, Text, Group, Badge, Button, Loader, Alert, Stack, Grid, Modal, NumberInput, Select } from "@mantine/core";
 import { CircleDollar, ShoppingCart, Boxes3, CircleInfo } from '@gravity-ui/icons';
 import { toast } from "sonner";
 import {
@@ -70,45 +70,123 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  /* ── Acción "Pedir" ────────────────────────────────────────────────── */
+  /* ── Acción "Pedir" (inteligente) ───────────────────────────────────── */
   const [pedirLoading, setPedirLoading] = useState({});
 
+  // Modal inteligente: null | { alerta, locationsWithStock, mode: 'order'|'input' }
+  const [smartModal, setSmartModal] = useState(null);
+  const [smartForm, setSmartForm] = useState({ originId: '', quantity: 1 });
+  const [smartSaving, setSmartSaving] = useState(false);
+
+  /**
+   * Consulta el inventario del artículo y decide si crear una Orden
+   * (hay stock en otra ubicación) o registrar una Entrada directa.
+   */
   const handlePedir = async (alerta) => {
     const articleId = alerta.article?.id;
-    const articleName = alerta.article?.name;
+    const destinationId = alerta.location?.id;
 
     setPedirLoading((prev) => ({ ...prev, [articleId]: true }));
     try {
-      const payload = {
-        articleId,
-        destinationId:
-          alerta.location?.id,
-        quantity: alerta.deficit ?? 1,
-        type: "MANUAL",
-      };
-
-      const res = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+      const res = await fetch(`${API_URL}/inventory?articleId=${articleId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(
-          errBody?.message ?? `Error ${res.status} al crear orden`
-        );
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message ?? `Error ${res.status} al consultar inventario`);
       }
 
-      toast.success(`✅ Orden creada para "${articleName}"`);
-      fetchData(); // Recarga → la alerta pasa de rojo a azul
+      const inventoryData = await res.json();
+
+      // Ubicaciones con stock disponible distintas al destino de la alerta
+      const locationsWithStock = (inventoryData.locations ?? []).filter(
+        (loc) => loc.stockActual > 0 && loc.location?.id !== destinationId
+      );
+
+      const mode = locationsWithStock.length > 0 ? 'order' : 'input';
+      setSmartForm({ originId: '', quantity: alerta.deficit ?? 1 });
+      setSmartModal({ alerta, locationsWithStock, mode });
     } catch (err) {
       toast.error(err.message);
     } finally {
       setPedirLoading((prev) => ({ ...prev, [articleId]: false }));
+    }
+  };
+
+  const handleCloseSmartModal = () => {
+    setSmartModal(null);
+    setSmartForm({ originId: '', quantity: 1 });
+  };
+
+  /** Crear Orden de Reabastecimiento (hay stock en otro lugar) */
+  const handleConfirmOrder = async () => {
+    if (!smartModal) return;
+    const { alerta } = smartModal;
+    const articleId = alerta.article?.id;
+    const destinationId = alerta.location?.id;
+
+    if (!smartForm.originId) {
+      toast.error('Selecciona la ubicación de origen');
+      return;
+    }
+
+    setSmartSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          articleId,
+          originId: Number(smartForm.originId),
+          destinationId,
+          quantity: Number(smartForm.quantity),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message ?? `Error ${res.status} al crear orden`);
+      }
+      toast.success(`✅ Orden creada para "${alerta.article?.name}"`);
+      handleCloseSmartModal();
+      fetchData();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSmartSaving(false);
+    }
+  };
+
+  /** Registrar Entrada desde proveedor externo (no hay stock en otra ubicación) */
+  const handleConfirmInput = async () => {
+    if (!smartModal) return;
+    const { alerta } = smartModal;
+    const articleId = alerta.article?.id;
+    const destinationId = alerta.location?.id;
+
+    setSmartSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/movements/input`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          articleId,
+          destinationId,
+          quantity: Number(smartForm.quantity),
+          status: 'COMPLETED',
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message ?? `Error ${res.status} al registrar entrada`);
+      }
+      toast.success(`✅ Entrada registrada para "${alerta.article?.name}"`);
+      handleCloseSmartModal();
+      fetchData();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSmartSaving(false);
     }
   };
 
@@ -523,6 +601,122 @@ export default function Dashboard() {
           </Grid.Col>
         </Grid>
       </div>
+
+      {/* ── Modal inteligente: Orden o Entrada ───────────────────────────── */}
+      <Modal
+        opened={!!smartModal}
+        onClose={handleCloseSmartModal}
+        title={
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-lg" style={{ color: "var(--ds-text)" }}>
+              {smartModal?.mode === 'order' ? 'Orden de Reabastecimiento' : 'Entrada desde Proveedor'}
+            </span>
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+              style={smartModal?.mode === 'order'
+                ? { border: "1px solid rgba(14, 165, 233, 0.4)", background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)", color: "rgba(14, 165, 233, 1)" }
+                : { border: "1px solid rgba(16, 185, 129, 0.4)", background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)", color: "var(--ds-success-text)" }
+              }
+            >
+              {smartModal?.mode === 'order' ? 'Transferencia' : 'Compra'}
+            </span>
+          </div>
+        }
+        centered
+        overlayProps={{ backgroundOpacity: 0.4, blur: 2 }}
+        styles={{
+          content: { backgroundColor: "var(--ds-surface)", borderRadius: "10px", border: "1px solid var(--ds-border)", boxShadow: "0 8px 40px rgba(0,0,0,0.12)" },
+          header: { backgroundColor: "var(--ds-surface)", borderBottom: "1px solid var(--ds-border)", paddingBottom: "12px" },
+          body: { paddingTop: "16px" },
+          close: { color: "var(--ds-text)" },
+        }}
+      >
+        {smartModal && (
+          <div className="flex flex-col gap-4">
+
+            {/* Info: artículo y destino */}
+            <div
+              className="rounded-lg p-3 flex flex-col gap-1"
+              style={{ background: "var(--ds-bg)", border: "1px solid var(--ds-border)" }}
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: "var(--ds-muted)" }}>Artículo</span>
+                <span className="text-sm font-semibold font-mono" style={{ color: "var(--ds-text)" }}>
+                  {smartModal.alerta.article?.name}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: "var(--ds-muted)" }}>Destino</span>
+                <span className="text-sm font-medium" style={{ color: "var(--ds-text)" }}>
+                  {smartModal.alerta.location?.name ?? 'General'}
+                </span>
+              </div>
+            </div>
+
+            {/* Modo: Orden → selector de origen */}
+            {smartModal.mode === 'order' && (
+              <Select
+                label="Origen (ubicación con stock)"
+                placeholder="Selecciona una ubicación"
+                required
+                data={smartModal.locationsWithStock.map((loc) => ({
+                  value: String(loc.location.id),
+                  label: `${loc.location.name} — ${loc.stockActual} uds disponibles`,
+                }))}
+                value={smartForm.originId}
+                onChange={(val) => setSmartForm((f) => ({ ...f, originId: val ?? '' }))}
+                styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)", color: "var(--ds-text)" } }}
+              />
+            )}
+
+            {/* Modo: Entrada → aviso informativo */}
+            {smartModal.mode === 'input' && (
+              <div
+                className="rounded-lg p-3 flex items-start gap-2 text-sm"
+                style={{ background: "var(--ds-success-bg)", border: "1px solid var(--ds-success-border)", color: "var(--ds-success-text)" }}
+              >
+                <span className="mt-0.5">●</span>
+                <span>No hay stock disponible en otras ubicaciones. Se registrará una <strong>entrada desde proveedor externo</strong> que actualizará el inventario inmediatamente.</span>
+              </div>
+            )}
+
+            {/* Cantidad */}
+            <NumberInput
+              label="Cantidad"
+              min={1}
+              step={1}
+              allowDecimal={false}
+              value={smartForm.quantity}
+              onChange={(val) => setSmartForm((f) => ({ ...f, quantity: val ?? 1 }))}
+              styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)", color: "var(--ds-text)" } }}
+            />
+
+            {/* Botones */}
+            <div className="flex gap-3 justify-end mt-2">
+              <button
+                onClick={handleCloseSmartModal}
+                disabled={smartSaving}
+                className="px-4 h-[38px] rounded-md text-sm font-medium cursor-pointer transition-colors disabled:opacity-50"
+                style={{ border: "1px solid var(--ds-border)", background: "transparent", color: "var(--ds-text)" }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={smartModal.mode === 'order' ? handleConfirmOrder : handleConfirmInput}
+                disabled={smartSaving || (smartModal.mode === 'order' && !smartForm.originId)}
+                className="px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                style={smartModal.mode === 'order'
+                  ? { border: "1px solid rgba(14, 165, 233, 0.5)", background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)", color: "rgba(14, 165, 233, 1)", boxShadow: "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)" }
+                  : { border: "1px solid rgba(16, 185, 129, 0.4)", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.04) 100%), var(--ds-surface)", color: "var(--ds-success-text)", boxShadow: "0 0 0 1px rgba(16, 185, 129, 0.08), 0 2px 8px rgba(16, 185, 129, 0.15)" }
+                }
+              >
+                {smartSaving ? <Loader size={14} color={smartModal.mode === 'order' ? 'rgba(14,165,233,1)' : 'var(--ds-success-text)'} /> : null}
+                {smartModal.mode === 'order' ? 'Crear Orden' : 'Registrar Entrada'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </Container>
   );
 }
