@@ -474,7 +474,6 @@ function Registrar() {
         data={[
           { value: 'input', label: 'Entrada' },
           { value: 'output', label: 'Salida' },
-          { value: 'transfer', label: 'Transferencia' }
         ]}
         required
       />
