@@ -197,19 +197,27 @@ export default function MasterInventory() {
                     </p>
                 </div>
                 {!isEmployee && (
-                    <Button
-                        leftSection={<Plus width={16} height={16} />}
-                        style={{
-                            background: "linear-gradient(135deg, #6366F1 0%, #4e46e5 100%)",
-                            color: "#FFFFFF",
-                            border: "none",
-                        }}
-                        radius="md"
+                    <button
                         onClick={handleNew}
-                        className="transition-transform active:scale-95 shadow-sm hover:shadow-md hover:brightness-110 cursor-pointer"
+                        className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+                        style={{
+                            border: "1px solid rgba(14, 165, 233, 0.5)",
+                            background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)",
+                            color: "rgba(14, 165, 233, 1)",
+                            boxShadow: "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)",
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.08) 100%), var(--ds-surface)";
+                            e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.15), 0 4px 16px rgba(14, 165, 233, 0.25)";
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)";
+                            e.currentTarget.style.boxShadow = "0 0 0 1px rgba(14, 165, 233, 0.08), 0 2px 8px rgba(14, 165, 233, 0.15)";
+                        }}
                     >
+                        <Plus width={16} height={16} />
                         Nuevo Artículo
-                    </Button>
+                    </button>
                 )}
             </div>
 
