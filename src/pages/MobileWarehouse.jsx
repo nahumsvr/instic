@@ -43,10 +43,17 @@ const BadgeStatus = ({ status }) => {
       background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
       color: "var(--ds-danger-text)",
     };
-  } else if (s === 'APPROVED' || s === 'IN_PROGRESS') {
+  } else if (s === 'APPROVED') {
     style = {
-      border: "1px solid rgba(99, 102, 241, 0.4)",
-      background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+      border: "1px solid rgba(139, 92, 246, 0.4)",
+      background: "linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 100%), var(--ds-surface)",
+      color: "rgba(139, 92, 246, 1)",
+    };
+    dot = true;
+  } else if (s === 'IN_PROGRESS') {
+    style = {
+      border: "1px solid var(--ds-info-border)",
+      background: "linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 100%), var(--ds-surface)",
       color: "var(--ds-info-text)",
     };
     dot = true;

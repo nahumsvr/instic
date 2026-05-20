@@ -57,9 +57,9 @@ const BadgeStatus = ({ status }) => {
 
   if (status === 'COMPLETED') {
     style = {
-      border: "1px solid rgba(14, 165, 233, 0.4)",
-      background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
-      color: "var(--ds-info-text)",
+      border: "1px solid rgba(16, 185, 129, 0.4)",
+      background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-success-text)",
     };
   } else if (status === 'PENDING') {
     style = {
@@ -74,10 +74,17 @@ const BadgeStatus = ({ status }) => {
       background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
       color: "var(--ds-danger-text)",
     };
-  } else if (status === 'APPROVED' || status === 'IN_PROGRESS') {
+  } else if (status === 'APPROVED') {
     style = {
-      border: "1px solid rgba(99, 102, 241, 0.4)",
-      background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+      border: "1px solid rgba(139, 92, 246, 0.4)",
+      background: "linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 100%), var(--ds-surface)",
+      color: "rgba(139, 92, 246, 1)",
+    };
+    dot = true;
+  } else if (status === 'IN_PROGRESS') {
+    style = {
+      border: "1px solid var(--ds-info-border)",
+      background: "linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 100%), var(--ds-surface)",
       color: "var(--ds-info-text)",
     };
     dot = true;
