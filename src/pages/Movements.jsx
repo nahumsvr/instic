@@ -34,7 +34,7 @@ const ButtonPrimary = ({ children, className = "", ...props }) => (
 
 const ButtonSecondary = ({ children, className = "", ...props }) => (
   <button
-    className={`bg-transparent text-[var(--ds-text)] hover:bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-[6px] px-4 h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
+    className={`bg-transparent text-[var(--ds-text)] hover:bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-[6px] px-4 min-h-[38px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
     {...props}
   >
     {children}
@@ -441,10 +441,26 @@ function Ordenes() {
   const [scannerOpened, setScannerOpened] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [scannedOrder, setScannedOrder] = useState(null);
+  const [isNewOrder, setIsNewOrder] = useState(false);
 
   const [formData, setFormData] = useState({ articleId: '', quantity: 1, originId: '', destinationId: '' });
   const [articles, setArticles] = useState([]);
   const [locations, setLocations] = useState([]);
+
+  const handleShowQrModal = (item) => {
+    const qrCode = item.qr_code?.split('/').pop() || item.qrCode || "ORD-UNKNOWN";
+    setGeneratedQr(qrCode);
+    setGeneratedOrder({
+      qrCode,
+      articleName: item.article?.nombre || item.article?.name || item.articleId,
+      quantity: item.cantidad,
+      originName: item.origin?.nombre || item.origin?.name || item.originId,
+      destinationName: item.destination?.nombre || item.destination?.name || item.destinationId,
+      createdAt: new Date(item.created_at || item.createdAt || Date.now()).toLocaleString('es-MX'),
+    });
+    setIsNewOrder(false);
+    setQrModalOpened(true);
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -508,6 +524,7 @@ function Ordenes() {
         destinationName: destination?.nombre || destination?.name || formData.destinationId,
         createdAt: new Date().toLocaleString('es-MX'),
       });
+      setIsNewOrder(true);
       setModalOpened(false);
       setQrModalOpened(true);
       fetchOrders();
@@ -698,6 +715,7 @@ function Ordenes() {
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Origen</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Destino</th>
               <th className="px-4 py-3 font-semibold text-[var(--ds-muted)]">Estado</th>
+              <th className="px-4 py-3 font-semibold text-[var(--ds-muted)] text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -709,10 +727,20 @@ function Ordenes() {
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.origin?.nombre || item.origin?.name || item.originId}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.destination?.nombre || item.destination?.name || item.destinationId}</td>
                 <td className="px-4 py-3"><BadgeStatus status={item.estado} /></td>
+                <td className="px-4 py-3 text-right">
+                  <Group justify="flex-end" gap="xs">
+                    <Tooltip label="Ver QR e Imprimir" withArrow>
+                      <ButtonSecondary className="py-2" onClick={() => handleShowQrModal(item)}>
+                        <QrCode width={16} height={16} />
+                        QR / Imprimir
+                      </ButtonSecondary>
+                    </Tooltip>
+                  </Group>
+                </td>
               </tr>
             ))}
             {orders.length === 0 && !loading && (
-              <tr><td colSpan={6} className="text-center py-8 text-[var(--ds-muted)]">No hay órdenes registradas.</td></tr>
+              <tr><td colSpan={7} className="text-center py-8 text-[var(--ds-muted)]">No hay órdenes registradas.</td></tr>
             )}
           </tbody>
         </table>
@@ -760,7 +788,7 @@ function Ordenes() {
       <Modal
         opened={qrModalOpened}
         onClose={() => setQrModalOpened(false)}
-        title="Orden Generada Exitosamente"
+        title={isNewOrder ? "Orden Generada Exitosamente" : "Detalle de Orden y QR"}
         shadow="0 8px 40px rgba(0,0,0,0.12)"
         size="md"
       >
@@ -900,7 +928,8 @@ function Ordenes() {
                 </div>
                 <div>
                   <p className="text-sm text-[var(--ds-muted)] mb-1">Estado Actual</p>
-                  <BadgeStatus status={scannedOrder.status} />
+                  {console.log(scannedOrder)}
+                  <BadgeStatus status={scannedOrder.estado} />
                 </div>
               </Group>
             </div>
@@ -908,7 +937,7 @@ function Ordenes() {
             <Group justify="flex-end" mt="xl">
               <ButtonSecondary onClick={() => setScannedOrder(null)}>Cerrar</ButtonSecondary>
               {scannedOrder.status !== 'COMPLETED' && scannedOrder.status !== 'CANCELLED' && (
-                <ButtonPrimary onClick={() => handleAdvanceState(scannedOrder.id, scannedOrder.status)}>
+                <ButtonPrimary onClick={() => handleAdvanceState(scannedOrder.id_orden, scannedOrder.estado)}>
                   Avanzar Estado
                 </ButtonPrimary>
               )}
