@@ -181,9 +181,9 @@ export default function Dashboard() {
   /* ── Render ────────────────────────────────────────────────────────── */
   return (
     <Container size="xl" py="2xl">
-      <Title order={1} mb="xl" style={{ fontWeight: 700 }}>
+      <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-6 font-inter tracking-tight">
         Dashboard
-      </Title>
+      </h1>
 
       <div className="flex flex-col gap-4">
       {/* ── KPI Cards ── */}

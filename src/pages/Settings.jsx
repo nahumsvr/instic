@@ -95,9 +95,9 @@ export default function Settings() {
 
   return (
     <Container size="md" py="2xl">
-      <Title order={1} mb="xl" style={{ fontWeight: 700, color: "var(--ds-text)" }}>
+      <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-6 font-inter tracking-tight">
         Configuración
-      </Title>
+      </h1>
 
       <Stack gap="xl">
         <Card

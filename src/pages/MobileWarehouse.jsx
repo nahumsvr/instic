@@ -306,9 +306,9 @@ export default function MobileWarehouse() {
         {/* Header */}
         <Group justify="space-between" mb="lg">
           <div>
-            <Title order={3} style={{ color: "var(--ds-text)" }}>
+            <h2 className="text-[1.25rem] font-semibold text-[var(--ds-text)] font-inter tracking-tight">
               Tareas Pendientes
-            </Title>
+            </h2>
             <Text size="sm" c="dimmed">
               <span style={{ color: "var(--ds-text)", fontWeight: 500 }}>
                 {locationName || locationId}

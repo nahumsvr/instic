@@ -345,10 +345,10 @@ export default function Administration() {
 
   return (
     <Container size="lg" py="2xl" style={{ fontFamily: "Inter, sans-serif" }}>
-      <div className="mb-8">
-        <Title order={1} style={{ fontWeight: 700, color: "var(--ds-text)" }}>
+      <div className="mb-6">
+        <h1 className="text-[2rem] font-bold text-[var(--ds-text)] mb-1 font-inter tracking-tight">
           Administración
-        </Title>
+        </h1>
         <Text size="sm" mt={4} style={{ color: "var(--ds-muted)" }}>
           Gestión de usuarios y ubicaciones del sistema.
         </Text>
