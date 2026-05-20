@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import {
   Container, Card, Text, Button, Drawer, Modal,
-  TextInput, Stack, Group, Title, Loader, Alert, Box
+  TextInput, Stack, Group, Title, Loader, Alert, Box, NumberInput
 } from "@mantine/core";
 import QrScanner from "../components/QrScanner";
 import { toast } from "sonner";
-import { Camera, TriangleExclamation, MapPin, Box as BoxIcon, Check, ArrowRotateLeft } from "@gravity-ui/icons";
+import {
+  Camera, TriangleExclamation, MapPin, Box as BoxIcon, Check,
+  ArrowRotateLeft, Clock, Xmark
+} from "@gravity-ui/icons";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
 import {
@@ -14,9 +17,7 @@ import {
   setSessionLocation,
   clearSessionLocation,
 } from "../utils/warehouseLocation";
-
-/** Estados activos que un almacén puede recibir */
-const ACTIVE_STATES = ["PENDING", "APPROVED", "IN_PROGRESS"];
+import SectionNav from "../components/SectionNav";
 
 const BadgeStatus = ({ status }) => {
   let style;
@@ -25,9 +26,9 @@ const BadgeStatus = ({ status }) => {
 
   if (s === 'COMPLETED') {
     style = {
-      border: "1px solid rgba(14, 165, 233, 0.4)",
-      background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
-      color: "var(--ds-info-text)",
+      border: "1px solid rgba(16, 185, 129, 0.4)",
+      background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-success-text)",
     };
   } else if (s === 'PENDING') {
     style = {
@@ -68,10 +69,110 @@ const BadgeStatus = ({ status }) => {
   );
 };
 
+const OrderStepper = ({ status }) => {
+  const steps = [
+    { key: "PENDING", label: "Pendiente" },
+    { key: "APPROVED", label: "Aprobado" },
+    { key: "IN_PROGRESS", label: "En Tránsito" },
+    { key: "COMPLETED", label: "Completado" },
+  ];
+
+  const currentIdx = steps.findIndex(s => s.key === status.toUpperCase());
+
+  return (
+    <div className="flex items-center justify-between w-full my-4 relative">
+      {/* Línea conectora de fondo */}
+      <div className="absolute top-[14px] left-0 right-0 h-[2px] bg-[var(--ds-border)] z-0" />
+      
+      {/* Línea conectora activa */}
+      {currentIdx > 0 && (
+        <div 
+          className="absolute top-[14px] left-0 h-[2px] bg-[var(--ds-accent)] z-0 transition-all duration-300"
+          style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
+        />
+      )}
+
+      {steps.map((step, idx) => {
+        const isCompleted = idx < currentIdx;
+        const isActive = idx === currentIdx;
+
+        let dotStyle = {
+          width: "28px",
+          height: "28px",
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1,
+          fontFamily: "var(--ds-font-mono)",
+          fontSize: "0.75rem",
+          fontWeight: 600,
+          transition: "all 150ms ease-in-out",
+        };
+
+        if (isActive) {
+          if (step.key === "PENDING") {
+            dotStyle = {
+              ...dotStyle,
+              border: "2px solid rgba(245, 158, 11, 0.6)",
+              backgroundColor: "var(--ds-surface)",
+              color: "rgba(245, 158, 11, 1)",
+              boxShadow: "0 0 8px rgba(245, 158, 11, 0.2)",
+            };
+          } else if (step.key === "APPROVED" || step.key === "IN_PROGRESS") {
+            dotStyle = {
+              ...dotStyle,
+              border: "2px solid rgba(99, 102, 241, 0.6)",
+              backgroundColor: "var(--ds-surface)",
+              color: "rgba(99, 102, 241, 1)",
+              boxShadow: "0 0 8px rgba(99, 102, 241, 0.2)",
+            };
+          } else {
+            dotStyle = {
+              ...dotStyle,
+              border: "2px solid rgba(16, 185, 129, 0.6)",
+              backgroundColor: "var(--ds-surface)",
+              color: "rgba(16, 185, 129, 1)",
+              boxShadow: "0 0 8px rgba(16, 185, 129, 0.2)",
+            };
+          }
+        } else if (isCompleted) {
+          dotStyle = {
+            ...dotStyle,
+            border: "2px solid var(--ds-accent)",
+            backgroundColor: "var(--ds-accent)",
+            color: "var(--ds-accent-fg)",
+          };
+        } else {
+          dotStyle = {
+            ...dotStyle,
+            border: "2px solid var(--ds-border)",
+            backgroundColor: "var(--ds-surface)",
+            color: "var(--ds-muted)",
+          };
+        }
+
+        return (
+          <div key={step.key} className="flex flex-col items-center gap-1 flex-1 z-10">
+            <div style={dotStyle}>
+              {isCompleted ? <Check width={14} height={14} /> : idx + 1}
+            </div>
+            <span 
+              className={`text-[0.6875rem] font-medium mt-1 ${isActive ? "text-[var(--ds-text)] font-semibold" : "text-[var(--ds-muted)]"}`}
+            >
+              {step.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function MobileWarehouse() {
   const { token } = useAuth();
 
-  // --- Estado de ubicación seleccionada (sesión o por defecto desde Configuración) ---
+  // --- Estado de ubicación seleccionada ---
   const [location, setLocation] = useState(getInitialWarehouseLocation);
   const { id: locationId, name: locationName } = location;
 
@@ -85,17 +186,28 @@ export default function MobileWarehouse() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [errorOrders, setErrorOrders] = useState(null);
 
+  // --- Filtro por pestaña (Activos, Completados, Cancelados) ---
+  const [activeSection, setActiveSection] = useState("active");
+
   // --- Scanner ---
   const [scannerOpen, setScannerOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [pendingOrder, setPendingOrder] = useState(null);
 
-  // --- Detalle y confirmación ---
+  // --- Detalle y confirmación de recepción ---
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
+  // --- Modal de ETA ---
+  const [etaModalOpen, setEtaModalOpen] = useState(false);
+  const [etaDays, setEtaDays] = useState(3);
+  const [orderToApprove, setOrderToApprove] = useState(null);
+
+  // --- Modal de Cancelación ---
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   // ─── Fetch: Ubicaciones ──────────────────────────────────────────────────
   const fetchLocations = async () => {
@@ -117,8 +229,6 @@ export default function MobileWarehouse() {
   };
 
   // ─── Fetch: Pedidos ──────────────────────────────────────────────────────
-  // La API retorna todas las órdenes; filtramos en el cliente por destinationId
-  // y por estado activo. El campo de estado real es `estado` (no `status`).
   const fetchOrders = async () => {
     setLoadingOrders(true);
     setErrorOrders(null);
@@ -129,13 +239,10 @@ export default function MobileWarehouse() {
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
       const data = await res.json();
 
-      // Normalizar el campo de estado (puede venir como `estado` o `status`)
+      // Filtrar únicamente por ubicación del almacén seleccionado
       const filtered = data.filter((o) => {
-        const estado = o.estado ?? o.status ?? "";
         const destId = o.destinationId ?? o.id_destino ?? o.destination?.id_ubicacion ?? o.destination?.id;
-        const isActiveState = ACTIVE_STATES.includes(estado.toUpperCase());
-        const isMyLocation = String(destId) === String(locationId);
-        return isActiveState && isMyLocation;
+        return String(destId) === String(locationId);
       });
 
       setOrders(filtered);
@@ -166,6 +273,50 @@ export default function MobileWarehouse() {
     clearSessionLocation();
     setLocation({ id: "", name: "" });
     setOrders([]);
+  };
+
+  // ─── Cambios de Estado Generales ─────────────────────────────────────────
+  const handleUpdateOrderState = async (orderId, nextStatus, payloadExtra = {}) => {
+    setLoadingOrders(true);
+    try {
+      const payload = { status: nextStatus, ...payloadExtra };
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/state`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || `Error: ${res.statusText}`);
+      }
+
+      toast.success(`Pedido #${orderId} actualizado a ${nextStatus}`);
+      await fetchOrders();
+    } catch (err) {
+      toast.error(`Error al actualizar estado: ${err.message}`);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const handleApproveClick = (order) => {
+    setOrderToApprove(order);
+    setEtaDays(3);
+    setEtaModalOpen(true);
+  };
+
+  const handleStartTransit = (order) => {
+    const orderId = order.id_orden ?? order.id;
+    handleUpdateOrderState(orderId, "IN_PROGRESS");
+  };
+
+  const handleCancelClick = (order) => {
+    setOrderToCancel(order);
+    setCancelModalOpen(true);
   };
 
   // ─── Scanner ─────────────────────────────────────────────────────────────
@@ -211,12 +362,11 @@ export default function MobileWarehouse() {
     }
   };
 
-  // ─── Confirmar recepción ─────────────────────────────────────────────────
+  // ─── Confirmar recepción e ingresos de stock ─────────────────────────────
   const handleConfirmDelivery = async () => {
     if (!selectedOrder) return;
     setConfirming(true);
 
-    // El ID real de la orden
     const orderId = selectedOrder.id_orden ?? selectedOrder.id;
 
     try {
@@ -268,6 +418,40 @@ export default function MobileWarehouse() {
       setConfirming(false);
     }
   };
+
+  // ─── Clasificación y Filtrado de Pedidos ─────────────────────────────────
+  const activeCount = orders.filter((o) => {
+    const status = (o.estado ?? o.status ?? "").toUpperCase();
+    return ["PENDING", "APPROVED", "IN_PROGRESS"].includes(status);
+  }).length;
+
+  const completedCount = orders.filter((o) => {
+    const status = (o.estado ?? o.status ?? "").toUpperCase();
+    return status === "COMPLETED";
+  }).length;
+
+  const cancelledCount = orders.filter((o) => {
+    const status = (o.estado ?? o.status ?? "").toUpperCase();
+    return status === "CANCELLED";
+  }).length;
+
+  const SECTIONS = [
+    { id: "active", label: `Activos (${activeCount})`, icon: Clock },
+    { id: "completed", label: `Completados (${completedCount})`, icon: Check },
+    { id: "cancelled", label: `Cancelados (${cancelledCount})`, icon: Xmark },
+  ];
+
+  const filteredOrders = orders.filter((o) => {
+    const status = (o.estado ?? o.status ?? "").toUpperCase();
+    if (activeSection === "active") {
+      return ["PENDING", "APPROVED", "IN_PROGRESS"].includes(status);
+    } else if (activeSection === "completed") {
+      return status === "COMPLETED";
+    } else if (activeSection === "cancelled") {
+      return status === "CANCELLED";
+    }
+    return false;
+  });
 
   // ════════════════════════════════════════════════════════════════════════════
   // UI: Selección de Almacén
@@ -352,13 +536,13 @@ export default function MobileWarehouse() {
   // UI: Lista de Pedidos
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <Box bg="var(--ds-bg)">
+    <Box bg="var(--ds-bg)" style={{ minHeight: "100vh" }}>
       <Container size="sm" p="md">
         {/* Header */}
         <Group justify="space-between" mb="lg">
           <div>
             <h2 className="text-[1.25rem] font-semibold text-[var(--ds-text)] font-inter tracking-tight">
-              Tareas Pendientes
+              Tareas de Almacén
             </h2>
             <Text size="sm" c="dimmed">
               <span style={{ color: "var(--ds-text)", fontWeight: 500 }}>
@@ -373,33 +557,29 @@ export default function MobileWarehouse() {
               </span>
             </Text>
           </div>
-          <Group gap="xs">
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-              style={{
-                border: "1px solid rgba(99, 102, 241, 0.4)",
-                background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
-                color: "var(--ds-info-text)",
-              }}
-            >
-              {orders.length} pedido{orders.length !== 1 ? "s" : ""}
-            </span>
-            <Button
-              variant="subtle"
-              color="gray"
-              size="xs"
-              px="xs"
-              loading={loadingOrders}
-              onClick={fetchOrders}
-              title="Actualizar pedidos"
-            >
-              <ArrowRotateLeft width={16} height={16} />
-            </Button>
-          </Group>
+          <Button
+            variant="subtle"
+            color="gray"
+            size="xs"
+            px="xs"
+            loading={loadingOrders}
+            onClick={fetchOrders}
+            title="Actualizar pedidos"
+          >
+            <ArrowRotateLeft width={16} height={16} />
+          </Button>
         </Group>
 
+        {/* Selector de Pestañas SectionNav */}
+        <SectionNav
+          sections={SECTIONS}
+          activeTab={activeSection}
+          onChange={setActiveSection}
+          ariaLabel="Filtrar pedidos de almacén móvil"
+        />
+
         {/* Contenido */}
-        {loadingOrders ? (
+        {loadingOrders && orders.length === 0 ? (
           <Group justify="center" mt="xl">
             <Loader color="var(--ds-accent)" />
           </Group>
@@ -411,7 +591,7 @@ export default function MobileWarehouse() {
           >
             {errorOrders}
           </Alert>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <Stack align="center" mt="xl" py="xl">
             <Check
               width={48}
@@ -419,17 +599,19 @@ export default function MobileWarehouse() {
               style={{ color: "var(--ds-success-text, #15803D)" }}
             />
             <Text fw={500} size="lg" style={{ color: "var(--ds-text)" }}>
-              Todo al día
+              {activeSection === "active" ? "Todo al día" : "Sin registros"}
             </Text>
-            <Text c="dimmed">No hay pedidos pendientes por recibir.</Text>
+            <Text c="dimmed">
+              {activeSection === "active" 
+                ? "No tienes pedidos pendientes de gestionar." 
+                : "No se encontraron pedidos en esta categoría."}
+            </Text>
           </Stack>
         ) : (
           <Stack gap="md">
-            {orders.map((order) => {
+            {filteredOrders.map((order) => {
               const orderId = order.id_orden ?? order.id;
-              const estado = order.estado ?? order.status ?? "";
-              // Los items pueden venir como `items`, `detalles`, o directamente
-              // como un solo artículo en la orden (estructura plana)
+              const estado = (order.estado ?? order.status ?? "").toUpperCase();
               const itemCount =
                 order.items?.length ??
                 order.detalles?.length ??
@@ -452,6 +634,7 @@ export default function MobileWarehouse() {
                     borderColor: "var(--ds-border)",
                   }}
                 >
+                  {/* ID de Pedido y Badge */}
                   <Group justify="space-between" mb="xs">
                     <Text
                       fw={700}
@@ -464,6 +647,7 @@ export default function MobileWarehouse() {
                     <BadgeStatus status={estado} />
                   </Group>
 
+                  {/* Nombre de Artículo y Cantidad */}
                   {articleName && (
                     <Text size="sm" c="dimmed" mb={4}>
                       {articleName}
@@ -478,18 +662,152 @@ export default function MobileWarehouse() {
                         : "—"}
                   </Text>
 
-                  <Button
-                    fullWidth
-                    size="md"
-                    leftSection={<Camera width={18} height={18} />}
-                    style={{
-                      backgroundColor: "var(--ds-accent)",
-                      color: "var(--ds-accent-fg)",
-                    }}
-                    onClick={() => openOrderScanner(order)}
-                  >
-                    Recibir Pedido
-                  </Button>
+                  {/* Línea de tiempo visual (Stepper) */}
+                  {estado !== "CANCELLED" ? (
+                    <OrderStepper status={estado} />
+                  ) : (
+                    <Alert
+                      color="red"
+                      title="Pedido Cancelado"
+                      icon={<TriangleExclamation width={16} height={16} />}
+                      mb="sm"
+                      styles={{
+                        root: {
+                          border: "1px solid rgba(244, 63, 94, 0.4)",
+                          background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
+                          padding: "8px 12px",
+                        },
+                        title: { color: "var(--ds-danger-text)", fontSize: "0.8125rem", fontWeight: 600 },
+                        message: { color: "var(--ds-danger-text)", fontSize: "0.75rem" }
+                      }}
+                    >
+                      Este reabastecimiento ha sido cancelado.
+                    </Alert>
+                  )}
+
+                  {/* Botones de acción adaptativos según estado */}
+                  {estado === "PENDING" && (
+                    <Group gap="sm" grow mt="md">
+                      <Button
+                        variant="light"
+                        color="red"
+                        leftSection={<Xmark width={16} height={16} />}
+                        onClick={() => handleCancelClick(order)}
+                        styles={{
+                          root: {
+                            border: "1px solid rgba(244, 63, 94, 0.4)",
+                            background: "transparent",
+                            color: "var(--ds-danger-text)",
+                            height: "38px",
+                            "&:hover": {
+                              background: "rgba(244, 63, 94, 0.08)",
+                            }
+                          }
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        style={{
+                          border: "1px solid rgba(245, 158, 11, 0.5)",
+                          background: "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.04) 100%), var(--ds-surface)",
+                          color: "rgba(245, 158, 11, 1)",
+                          boxShadow: "0 0 0 1px rgba(245, 158, 11, 0.08), 0 2px 8px rgba(245, 158, 11, 0.15)",
+                          height: "38px",
+                        }}
+                        onClick={() => handleApproveClick(order)}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = "linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(245, 158, 11, 0.08) 100%), var(--ds-surface)";
+                          e.currentTarget.style.boxShadow = "0 0 0 1px rgba(245, 158, 11, 0.15), 0 4px 16px rgba(245, 158, 11, 0.25)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.04) 100%), var(--ds-surface)";
+                          e.currentTarget.style.boxShadow = "0 0 0 1px rgba(245, 158, 11, 0.08), 0 2px 8px rgba(245, 158, 11, 0.15)";
+                        }}
+                      >
+                        Aprobar
+                      </Button>
+                    </Group>
+                  )}
+
+                  {estado === "APPROVED" && (
+                    <Group gap="sm" grow mt="md">
+                      <Button
+                        variant="light"
+                        color="red"
+                        leftSection={<Xmark width={16} height={16} />}
+                        onClick={() => handleCancelClick(order)}
+                        styles={{
+                          root: {
+                            border: "1px solid rgba(244, 63, 94, 0.4)",
+                            background: "transparent",
+                            color: "var(--ds-danger-text)",
+                            height: "38px",
+                            "&:hover": {
+                              background: "rgba(244, 63, 94, 0.08)",
+                            }
+                          }
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        style={{
+                          border: "1px solid rgba(99, 102, 241, 0.5)",
+                          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.04) 100%), var(--ds-surface)",
+                          color: "rgba(99, 102, 241, 1)",
+                          boxShadow: "0 0 0 1px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(99, 102, 241, 0.15)",
+                          height: "38px",
+                        }}
+                        onClick={() => handleStartTransit(order)}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = "linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(99, 102, 241, 0.08) 100%), var(--ds-surface)";
+                          e.currentTarget.style.boxShadow = "0 0 0 1px rgba(99, 102, 241, 0.15), 0 4px 16px rgba(99, 102, 241, 0.25)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.04) 100%), var(--ds-surface)";
+                          e.currentTarget.style.boxShadow = "0 0 0 1px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(99, 102, 241, 0.15)";
+                        }}
+                      >
+                        Iniciar Tránsito
+                      </Button>
+                    </Group>
+                  )}
+
+                  {estado === "IN_PROGRESS" && (
+                    <Group gap="sm" grow mt="md">
+                      <Button
+                        variant="light"
+                        color="red"
+                        leftSection={<Xmark width={16} height={16} />}
+                        onClick={() => handleCancelClick(order)}
+                        styles={{
+                          root: {
+                            border: "1px solid rgba(244, 63, 94, 0.4)",
+                            background: "transparent",
+                            color: "var(--ds-danger-text)",
+                            height: "38px",
+                            "&:hover": {
+                              background: "rgba(244, 63, 94, 0.08)",
+                            }
+                          }
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        style={{
+                          backgroundColor: "var(--ds-accent)",
+                          color: "var(--ds-accent-fg)",
+                          height: "38px",
+                        }}
+                        leftSection={<Camera width={18} height={18} />}
+                        onClick={() => openOrderScanner(order)}
+                      >
+                        Recibir Pedido
+                      </Button>
+                    </Group>
+                  )}
                 </Card>
               );
             })}
@@ -497,7 +815,116 @@ export default function MobileWarehouse() {
         )}
       </Container>
 
-      {/* ── Scanner Drawer ─────────────────────────────────────────────── */}
+      {/* ── Modal de ETA (Aprobación) ─────────────────────────────────── */}
+      <Modal
+        opened={etaModalOpen}
+        onClose={() => setEtaModalOpen(false)}
+        title={
+          <Text fw={600} style={{ color: "var(--ds-text)" }}>
+            Aprobar Pedido #{orderToApprove?.id_orden ?? orderToApprove?.id}
+          </Text>
+        }
+        size="sm"
+        centered
+        styles={{
+          content: { backgroundColor: "var(--ds-surface)", border: "1px solid var(--ds-border)" },
+          header: { backgroundColor: "var(--ds-surface)" },
+        }}
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Ingresa el tiempo estimado de llegada (ETA) en días para este pedido:
+          </Text>
+          <NumberInput
+            label="ETA (Días)"
+            min={1}
+            max={30}
+            value={etaDays}
+            onChange={(val) => setEtaDays(Number(val) || 3)}
+            required
+            styles={{
+              label: { color: "var(--ds-muted)", fontSize: "0.75rem", fontWeight: 500, marginBottom: "4px" },
+              input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)", color: "var(--ds-text)" }
+            }}
+          />
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              color="gray"
+              onClick={() => setEtaModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              style={{
+                backgroundColor: "var(--ds-accent)",
+                color: "var(--ds-accent-fg)",
+              }}
+              onClick={async () => {
+                const orderId = orderToApprove?.id_orden ?? orderToApprove?.id;
+                setEtaModalOpen(false);
+                await handleUpdateOrderState(orderId, "APPROVED", { etaDays });
+              }}
+            >
+              Confirmar
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* ── Modal de Cancelación (Confirmación) ─────────────────────────── */}
+      <Modal
+        opened={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        title={
+          <Text fw={600} style={{ color: "var(--ds-text)" }}>
+            Cancelar Pedido #{orderToCancel?.id_orden ?? orderToCancel?.id}
+          </Text>
+        }
+        size="sm"
+        centered
+        styles={{
+          content: { backgroundColor: "var(--ds-surface)", border: "1px solid var(--ds-border)" },
+          header: { backgroundColor: "var(--ds-surface)" },
+        }}
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            ¿Estás seguro de que deseas cancelar este pedido de reabastecimiento? Esta acción es definitiva y no se puede deshacer.
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              color="gray"
+              onClick={() => setCancelModalOpen(false)}
+            >
+              No, conservar
+            </Button>
+            <Button
+              color="red"
+              styles={{
+                root: {
+                  backgroundColor: "var(--ds-danger-bg, #FEF2F2)",
+                  border: "1px solid rgba(244, 63, 94, 0.4)",
+                  color: "var(--ds-danger-text, #B91C1C)",
+                  "&:hover": {
+                    backgroundColor: "rgba(244, 63, 94, 0.12)",
+                  }
+                }
+              }}
+              onClick={async () => {
+                const orderId = orderToCancel?.id_orden ?? orderToCancel?.id;
+                setCancelModalOpen(false);
+                await handleUpdateOrderState(orderId, "CANCELLED");
+              }}
+            >
+              Sí, cancelar pedido
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* ── Scanner Drawer/Modal ───────────────────────────────────────── */}
       <Modal
         opened={scannerOpen}
         onClose={() => setScannerOpen(false)}
@@ -630,7 +1057,6 @@ export default function MobileWarehouse() {
                     ×{selectedOrder.cantidad}
                   </Text>
                 </Group>
-                {/* Orden con lista de items */}
 
                 {/* Orden plana (un solo artículo directo en la orden) */}
                 {!(selectedOrder.items ?? selectedOrder.detalles) &&
