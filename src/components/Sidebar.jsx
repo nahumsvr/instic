@@ -11,33 +11,44 @@ import {
 } from "@gravity-ui/icons";
 import { useAuth } from "../context/AuthContext";
 
+// Colores Aurora por página: [r, g, b]
 const NAV_ITEMS = [
-  { label: "Dashboard", to: "/dashboard", icon: ChartLine, end: true },
-  { label: "Artículos", to: "/inventory", icon: Boxes3 },
-  { label: "Movimientos", to: "/movements", icon: ArrowRightArrowLeft },
-  { label: "Almacén móvil", to: "/mobile-warehouse", icon: MapPin },
-  { label: "Configuración", to: "/settings", icon: Gear },
+  { label: "Dashboard",     to: "/dashboard",        icon: ChartLine,           end: true,  accent: [99,  102, 241] }, // Indigo
+  { label: "Artículos",     to: "/inventory",         icon: Boxes3,                          accent: [14,  165, 233] }, // Sky
+  { label: "Movimientos",   to: "/movements",         icon: ArrowRightArrowLeft,             accent: [16,  185, 129] }, // Emerald
+  { label: "Almacén móvil", to: "/mobile-warehouse",  icon: MapPin,                          accent: [245, 158, 11]  }, // Amber
+  { label: "Configuración", to: "/settings",          icon: Gear,                            accent: [156, 163, 175] }, // Gray
 ];
 
-/** Item de navegación del sidebar con estado activo según la ruta actual. */
-function NavItem({ to, icon: Icon, label, end = false }) {
+/** Item de navegación del sidebar con Aurora effect en estado activo. */
+function NavItem({ to, icon: Icon, label, end = false, accent = [99, 102, 241] }) {
+  const [r, g, b] = accent;
+  const activeStyle = {
+    background: `linear-gradient(90deg, rgba(${r},${g},${b},0.12) 0%, rgba(${r},${g},${b},0) 100%)`,
+    borderLeft: `2px solid rgba(${r},${g},${b},0.9)`,
+    color: `rgb(${r},${g},${b})`,
+  };
+  const inactiveStyle = {
+    borderLeft: "2px solid transparent",
+  };
+
   return (
     <NavLink
       to={to}
       end={end}
-      className={({ isActive }) =>
-        [
-          "flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium",
-          "transition-[background-color,border-color] duration-150 ease-in-out",
-          "border-l-2",
-          isActive
-            ? "bg-[var(--ds-bg)] text-[var(--ds-text)] border-l-[var(--ds-accent)]"
-            : "text-[var(--ds-muted)] border-l-transparent hover:bg-[var(--ds-bg)]",
-        ].join(" ")
-      }
+      className="flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-in-out"
+      style={({ isActive }) => isActive ? activeStyle : inactiveStyle}
     >
-      <Icon width={16} height={16} />
-      <span>{label}</span>
+      {({ isActive }) => (
+        <>
+          <Icon
+            width={16}
+            height={16}
+            style={isActive ? { color: `rgb(${r},${g},${b})` } : { color: "var(--ds-muted)" }}
+          />
+          <span style={isActive ? {} : { color: "var(--ds-muted)" }}>{label}</span>
+        </>
+      )}
     </NavLink>
   );
 }
@@ -108,7 +119,7 @@ export default function Sidebar() {
 
   const navItems = [
     ...NAV_ITEMS,
-    ...(isAdmin(user) ? [{ label: "Administración", to: "/admin", icon: Shield }] : []),
+    ...(isAdmin(user) ? [{ label: "Administración", to: "/admin", icon: Shield, accent: [244, 63, 94] }] : []),
   ];
 
   const handleLogout = () => {
