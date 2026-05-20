@@ -8,7 +8,7 @@ import { useDebouncedValue } from "@mantine/hooks";
 
 export default function MasterInventory() {
     const { user, token } = useAuth();
-    const isEmployee = user?.rol === "empleado" || user?.rol === "employee" || (!user?.rol);
+    const isEmployee = user?.rol === "EMPLOYEE" || user?.rol === "EMPLOYEE" || (!user?.rol);
 
     const [data, setData] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -78,10 +78,10 @@ export default function MasterInventory() {
 
     const handleNew = () => {
         setEditingId(null);
-        
+
         // Generar un código aleatorio, ej: ART-8492
         const randomCode = `ART-${Math.floor(1000 + Math.random() * 9000)}`;
-        
+
         setFormData({
             code: randomCode,
             name: "",
@@ -141,7 +141,7 @@ export default function MasterInventory() {
             const method = isEdit ? "PATCH" : "POST";
 
             const payload = { ...formData };
-            
+
             const res = await fetch(url, {
                 method,
                 headers: {
@@ -264,42 +264,51 @@ export default function MasterInventory() {
                     {/* Total Items */}
                     <div
                         className="p-6 rounded-2xl shadow-sm flex flex-col justify-between relative overflow-hidden h-[120px]"
-                        style={{ background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)", color: "#FFFFFF" }}
+                        style={{
+                            border: "1px solid rgba(99, 102, 241, 0.4)",
+                            background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+                        }}
                     >
-                        <div className="absolute right-4 bottom-2 opacity-15">
+                        <div className="absolute right-4 bottom-2 opacity-20" style={{ color: "#6366F1" }}>
                             <Boxes3 width={72} height={72} />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-90">Total Items</p>
-                            <p className="text-3xl font-bold font-mono">{totalItems}</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--ds-muted)" }}>Total Items</p>
+                            <p className="text-3xl font-bold font-mono" style={{ color: "var(--ds-text)" }}>{totalItems}</p>
                         </div>
                     </div>
 
                     {/* Valor Total Almacén */}
                     <div
                         className="p-6 rounded-2xl shadow-sm flex flex-col justify-between relative overflow-hidden h-[120px]"
-                        style={{ background: "linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)", color: "#FFFFFF" }}
+                        style={{
+                            border: "1px solid rgba(14, 165, 233, 0.4)",
+                            background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
+                        }}
                     >
-                        <div className="absolute right-4 bottom-2 opacity-15">
+                        <div className="absolute right-4 bottom-2 opacity-20" style={{ color: "#0EA5E9" }}>
                             <CircleDollar width={72} height={72} />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-90">Valor Total Almacén</p>
-                            <p className="text-3xl font-bold font-mono">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--ds-muted)" }}>Valor Total Almacén</p>
+                            <p className="text-3xl font-bold font-mono" style={{ color: "var(--ds-text)" }}>${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
                     </div>
 
                     {/* Bajo Stock */}
                     <div
                         className="p-6 rounded-2xl shadow-sm flex flex-col justify-between relative overflow-hidden h-[120px]"
-                        style={{ background: "linear-gradient(135deg, #F43F5E 0%, #E11D48 100%)", color: "#FFFFFF" }}
+                        style={{
+                            border: "1px solid rgba(244, 63, 94, 0.4)",
+                            background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
+                        }}
                     >
-                        <div className="absolute right-4 bottom-2 opacity-15">
+                        <div className="absolute right-4 bottom-2 opacity-20" style={{ color: "#F43F5E" }}>
                             <CircleInfo width={72} height={72} />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider mb-1 opacity-90">Bajo Stock</p>
-                            <p className="text-3xl font-bold font-mono">{lowStockCount}</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--ds-muted)" }}>Bajo Stock</p>
+                            <p className="text-3xl font-bold font-mono" style={{ color: "var(--ds-text)" }}>{lowStockCount}</p>
                         </div>
                     </div>
                 </div>
@@ -342,13 +351,8 @@ export default function MasterInventory() {
                                     <Table.Td className="font-mono text-center">
                                         {!isEmployee ? (
                                             <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                                                    item.stock === 0 
-                                                    ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' 
-                                                    : item.stock <= 10 
-                                                    ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800' 
-                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                                                }`}
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${item.stock === 0 ? 'text-[var(--ds-danger-text)]' : item.stock <= 10 ? '' : 'text-blue-600 dark:text-blue-400'}`}
+                                                style={item.stock > 0 && item.stock <= 10 ? { color: "var(--ds-warning-text)" } : undefined}
                                             >
                                                 {item.stock}
                                             </span>
