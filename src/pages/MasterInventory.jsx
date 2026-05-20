@@ -110,6 +110,18 @@ export default function MasterInventory() {
 
     const handleEdit = (item) => {
         setEditingId(item.id_articulo);
+
+        // Si hay una ubicación seleccionada en el filtro, pre-cargar su stock config
+        let stockConfigs = [];
+        if (storeFilter) {
+            const locationId = Number(storeFilter);
+            stockConfigs = [{
+                locationId,
+                minStock: item.min_stock ?? item.minStock ?? item.stock_minimo ?? 0,
+                maxStock: item.max_stock ?? item.maxStock ?? item.stock_maximo ?? 0,
+            }];
+        }
+
         setFormData({
             code: item.codigo,
             name: item.nombre,
@@ -117,7 +129,7 @@ export default function MasterInventory() {
             size: item.size || "N/A",
             unitCost: item.costo_unitario || 0,
             unitPrice: item.precio_unitario || 0,
-            stockConfigs: [], // No se editan stockConfigs desde este modal
+            stockConfigs,
         });
         setOpened(true);
     };
@@ -157,8 +169,8 @@ export default function MasterInventory() {
             const method = isEdit ? "PATCH" : "POST";
 
             const payload = { ...formData };
-            // Solo enviar stockConfigs en creación y si hay al menos una ubicación configurada
-            if (isEdit || !payload.stockConfigs || payload.stockConfigs.length === 0) {
+            // Enviar stockConfigs en creación, o en edición si hay ubicación filtrada con config
+            if (!payload.stockConfigs || payload.stockConfigs.length === 0) {
                 delete payload.stockConfigs;
             }
 
@@ -535,18 +547,20 @@ export default function MasterInventory() {
                         />
                     </div>
 
-                    {/* Sección de stock mínimo y máximo por ubicación — solo al crear */}
-                    {!editingId && formData.stockConfigs && formData.stockConfigs.length > 0 && (
+                    {/* Sección de stock mínimo y máximo por ubicación */}
+                    {/* Al crear: todas las ubicaciones. Al editar con tienda filtrada: solo esa ubicación */}
+                    {formData.stockConfigs && formData.stockConfigs.length > 0 && (
                         <div>
                             <p
                                 className="text-xs font-semibold uppercase tracking-wider mb-3"
                                 style={{ color: "var(--ds-muted)" }}
                             >
-                                Stock por Ubicación
+                                {editingId ? "Stock de la Ubicación" : "Stock por Ubicación"}
                             </p>
                             <div className="flex flex-col gap-3">
                                 {formData.stockConfigs.map((sc) => {
                                     const loc = locations.find((l) => l.id_ubicacion === sc.locationId);
+                                    console.log(sc)
                                     return (
                                         <div
                                             key={sc.locationId}
@@ -556,12 +570,15 @@ export default function MasterInventory() {
                                                 background: "var(--ds-bg)",
                                             }}
                                         >
-                                            <p
-                                                className="text-xs font-medium mb-2"
-                                                style={{ color: "var(--ds-text)" }}
-                                            >
-                                                {loc?.nombre ?? `Ubicación ${sc.locationId}`}
-                                            </p>
+                                            {/* En modo crear mostramos el nombre de la ubicación encima de cada bloque */}
+                                            {!editingId && (
+                                                <p
+                                                    className="text-xs font-medium mb-2"
+                                                    style={{ color: "var(--ds-text)" }}
+                                                >
+                                                    {loc?.nombre ?? `Ubicación ${sc.locationId}`}
+                                                </p>
+                                            )}
                                             <div className="flex gap-3">
                                                 <NumberInput
                                                     label="Stock mínimo"
