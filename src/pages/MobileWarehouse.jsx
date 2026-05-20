@@ -3,7 +3,7 @@ import {
   Container, Card, Text, Button, Badge, Drawer,
   TextInput, Stack, Group, Title, Loader, Alert, Box
 } from "@mantine/core";
-import { ReactZxingScanner } from "react-zxing-scanner";
+import QrScanner from "../components/QrScanner";
 import { toast } from "sonner";
 import { Camera, TriangleExclamation, MapPin, Box as BoxIcon, Check, ArrowRotateLeft } from "@gravity-ui/icons";
 import { useAuth } from "../context/AuthContext";
