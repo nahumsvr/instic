@@ -666,7 +666,7 @@ export default function MobileWarehouse() {
           <Group gap="xs">
             <button
               onClick={() => openOrderScanner(null)}
-              className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+              className="hidden lg:flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
               style={{
                 border: "1px solid rgba(245, 158, 11, 0.5)",
                 background: "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.04) 100%), var(--ds-surface)",
@@ -1236,7 +1236,7 @@ export default function MobileWarehouse() {
       {/* Botón Flotante para Escanear QR */}
       <button
         onClick={() => openOrderScanner(null)}
-        className="fixed bottom-6 right-6 flex items-center justify-center w-12 h-12 rounded-full cursor-pointer transition-all duration-150 ease-in-out active:scale-95 z-50 shadow-lg"
+        className="lg:hidden fixed bottom-6 right-6 flex items-center justify-center w-12 h-12 rounded-full cursor-pointer transition-all duration-150 ease-in-out active:scale-95 z-50 shadow-lg"
         style={{
           border: "1px solid rgba(245, 158, 11, 0.5)",
           background: "linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.1) 100%), var(--ds-surface)",

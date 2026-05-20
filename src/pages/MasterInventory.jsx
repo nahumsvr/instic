@@ -199,7 +199,7 @@ export default function MasterInventory() {
                 {!isEmployee && (
                     <button
                         onClick={handleNew}
-                        className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+                        className="flex items-center gap-2 px-4 min-h-[38px] py-3 rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
                         style={{
                             border: "1px solid rgba(14, 165, 233, 0.5)",
                             background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%), var(--ds-surface)",
@@ -373,7 +373,7 @@ export default function MasterInventory() {
                                     {isEmployee && (
                                         <Table.Td className="text-center">
                                             {item.stock === 0 ? (
-                                                <span 
+                                                <span
                                                     className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                                                     style={{
                                                         border: "1px solid rgba(244, 63, 94, 0.4)",
@@ -384,7 +384,7 @@ export default function MasterInventory() {
                                                     ● Agotado
                                                 </span>
                                             ) : item.stock <= 10 ? (
-                                                <span 
+                                                <span
                                                     className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                                                     style={{
                                                         border: "1px solid rgba(245, 158, 11, 0.4)",
@@ -395,7 +395,7 @@ export default function MasterInventory() {
                                                     ● Stock Bajo
                                                 </span>
                                             ) : (
-                                                <span 
+                                                <span
                                                     className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                                                     style={{
                                                         border: "1px solid rgba(16, 185, 129, 0.4)",
