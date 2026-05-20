@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Select, NumberInput, Loader, Group, Modal } from "@mantine/core";
+import { Select, NumberInput, Loader, Group, Modal, Tooltip } from "@mantine/core";
 import { toast } from "sonner";
 import QRCodeModule from "react-qr-code";
 const QRCode = QRCodeModule.default || QRCodeModule;
 import { ReactZxingScanner as BarcodeScanner } from "react-zxing-scanner";
-import { Plus, Clock, FilePlus, QrCode } from "@gravity-ui/icons";
+import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
 
 const SECTIONS = [
@@ -437,6 +437,7 @@ function Ordenes() {
   const [modalOpened, setModalOpened] = useState(false);
   const [qrModalOpened, setQrModalOpened] = useState(false);
   const [generatedQr, setGeneratedQr] = useState("");
+  const [generatedOrder, setGeneratedOrder] = useState(null); // respuesta completa de la orden creada
   const [scannerOpened, setScannerOpened] = useState(false);
   const [scannedOrder, setScannedOrder] = useState(null);
 
@@ -491,7 +492,21 @@ function Ordenes() {
       if (!res.ok) throw new Error("Error creando orden");
       const json = await res.json();
       toast.success("Orden creada exitosamente");
-      setGeneratedQr(json.qrUrl?.split('/').pop() || json.qrCode || "ORD-UNKNOWN"); 
+      const qrCode = json.qrUrl?.split('/').pop() || json.qrCode || "ORD-UNKNOWN";
+      setGeneratedQr(qrCode);
+      // Enriquecer la orden con los datos del formulario para mostrar en el modal
+      const article = articles.find(a => (a.id_articulo || a.id)?.toString() === formData.articleId);
+      const origin = locations.find(l => (l.id_ubicacion || l.id)?.toString() === formData.originId);
+      const destination = locations.find(l => (l.id_ubicacion || l.id)?.toString() === formData.destinationId);
+      setGeneratedOrder({
+        ...json,
+        qrCode,
+        articleName: article?.nombre || article?.name || formData.articleId,
+        quantity: formData.quantity,
+        originName: origin?.nombre || origin?.name || formData.originId,
+        destinationName: destination?.nombre || destination?.name || formData.destinationId,
+        createdAt: new Date().toLocaleString('es-MX'),
+      });
       setModalOpened(false);
       setQrModalOpened(true);
       fetchOrders();
@@ -547,6 +562,118 @@ function Ordenes() {
     } catch (err) {
       toast.error(err.message);
     }
+  };
+
+  /**
+   * Abre una ventana de impresión con el QR y los datos de la orden.
+   * Genera el HTML de la ventana con el SVG del QR incrustado directamente.
+   */
+  const handlePrintOrder = (order) => {
+    const svgEl = document.querySelector('#qr-print-area svg');
+    if (!svgEl) {
+      toast.error('No se pudo encontrar el código QR para imprimir.');
+      return;
+    }
+    const svgString = new XMLSerializer().serializeToString(svgEl);
+    const printWindow = window.open('', '_blank', 'width=480,height=700');
+    if (!printWindow) {
+      toast.error('El navegador bloqueó la ventana de impresión. Permite ventanas emergentes.');
+      return;
+    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Orden ${order.qrCode}</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: 'Inter', Arial, sans-serif; background: #fff; color: #111; padding: 32px; }
+          .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e0e0e0; padding-bottom: 16px; margin-bottom: 24px; }
+          .header h1 { font-size: 1.25rem; font-weight: 700; }
+          .header span { font-size: 0.75rem; color: #6b6b6b; }
+          .qr-block { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 24px; }
+          .qr-block svg { display: block; }
+          .qr-code-label { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #6b6b6b; letter-spacing: 0.05em; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+          .info-item label { display: block; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #6b6b6b; margin-bottom: 2px; }
+          .info-item p { font-size: 0.875rem; font-weight: 500; color: #111; }
+          .info-item.full { grid-column: span 2; }
+          .footer { margin-top: 24px; border-top: 1px solid #e0e0e0; padding-top: 12px; text-align: center; font-size: 0.625rem; color: #aaaaaa; }
+          @media print {
+            body { padding: 16px; }
+            @page { size: A6; margin: 8mm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Orden de Reabastecimiento</h1>
+          <span>INSTIC</span>
+        </div>
+        <div class="qr-block">
+          ${svgString}
+          <span class="qr-code-label">${order.qrCode}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Artículo</label>
+            <p>${order.articleName}</p>
+          </div>
+          <div class="info-item">
+            <label>Cantidad</label>
+            <p>${order.quantity}</p>
+          </div>
+          <div class="info-item">
+            <label>Origen</label>
+            <p>${order.originName}</p>
+          </div>
+          <div class="info-item">
+            <label>Destino</label>
+            <p>${order.destinationName}</p>
+          </div>
+          <div class="info-item full">
+            <label>Fecha de creación</label>
+            <p>${order.createdAt}</p>
+          </div>
+        </div>
+        <div class="footer">Generado por Instic · ${order.createdAt}</div>
+        <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };<\/script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  /**
+   * Descarga el QR como imagen PNG (128×128) con los datos de la orden
+   * usando un canvas HTML para convertir el SVG.
+   */
+  const handleDownloadQR = (order) => {
+    const svgEl = document.querySelector('#qr-print-area svg');
+    if (!svgEl) {
+      toast.error('No se pudo encontrar el código QR para descargar.');
+      return;
+    }
+    const SIZE = 256;
+    const svgString = new XMLSerializer().serializeToString(svgEl);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, SIZE, SIZE);
+      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+      const link = document.createElement('a');
+      link.download = `qr-orden-${order.qrCode}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('QR descargado correctamente.');
+    };
+    img.onerror = () => toast.error('Error al generar la imagen PNG del QR.');
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
   };
 
   return (
@@ -629,16 +756,79 @@ function Ordenes() {
         </form>
       </Modal>
 
-      <Modal opened={qrModalOpened} onClose={() => setQrModalOpened(false)} title="Orden Generada Exitosamente" shadow="0 8px 40px rgba(0,0,0,0.12)">
-        <div className="flex flex-col items-center gap-6 p-4">
-          <div className="bg-[var(--ds-surface)] p-4 rounded-lg shadow-sm border border-[var(--ds-border)]">
-            <QRCode value={generatedQr} size={200} />
+      <Modal
+        opened={qrModalOpened}
+        onClose={() => setQrModalOpened(false)}
+        title="Orden Generada Exitosamente"
+        shadow="0 8px 40px rgba(0,0,0,0.12)"
+        size="md"
+      >
+        {generatedOrder && (
+          <div className="flex flex-col gap-5 p-2">
+            {/* QR Code centrado */}
+            <div className="flex justify-center">
+              <div
+                id="qr-print-area"
+                className="bg-white p-4 rounded-lg border border-[var(--ds-border)] flex flex-col items-center gap-3"
+              >
+                <QRCode value={generatedQr} size={180} />
+                <p className="font-mono text-xs text-[#111111] mt-1">{generatedQr}</p>
+              </div>
+            </div>
+
+            {/* Información del pedido */}
+            <div className="bg-[var(--ds-bg)] border border-[var(--ds-border)] rounded-lg p-4 flex flex-col gap-3">
+              <p className="text-xs font-semibold text-[var(--ds-muted)] uppercase tracking-wider mb-1">Detalle de la Orden</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <div>
+                  <p className="text-[var(--ds-muted)] text-xs mb-0.5">Artículo</p>
+                  <p className="font-medium text-[var(--ds-text)]">{generatedOrder.articleName}</p>
+                </div>
+                <div>
+                  <p className="text-[var(--ds-muted)] text-xs mb-0.5">Cantidad</p>
+                  <p className="font-mono font-medium text-[var(--ds-text)]">{generatedOrder.quantity}</p>
+                </div>
+                <div>
+                  <p className="text-[var(--ds-muted)] text-xs mb-0.5">Origen</p>
+                  <p className="font-medium text-[var(--ds-text)]">{generatedOrder.originName}</p>
+                </div>
+                <div>
+                  <p className="text-[var(--ds-muted)] text-xs mb-0.5">Destino</p>
+                  <p className="font-medium text-[var(--ds-text)]">{generatedOrder.destinationName}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[var(--ds-muted)] text-xs mb-0.5">Fecha de creación</p>
+                  <p className="font-mono text-xs text-[var(--ds-text)]">{generatedOrder.createdAt}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="flex gap-2">
+              <Tooltip label="Descargar QR como imagen PNG" withArrow>
+                <ButtonSecondary
+                  className="flex-1"
+                  onClick={() => handleDownloadQR(generatedOrder)}
+                >
+                  <ArrowDownToSquare width={16} height={16} />
+                  Descargar
+                </ButtonSecondary>
+              </Tooltip>
+              <Tooltip label="Imprimir orden con QR" withArrow>
+                <ButtonSecondary
+                  className="flex-1"
+                  onClick={() => handlePrintOrder(generatedOrder)}
+                >
+                  <Printer width={16} height={16} />
+                  Imprimir
+                </ButtonSecondary>
+              </Tooltip>
+              <ButtonPrimary className="flex-1" onClick={() => setQrModalOpened(false)}>
+                Cerrar
+              </ButtonPrimary>
+            </div>
           </div>
-          <p className="font-mono text-sm text-[var(--ds-text)] bg-[var(--ds-bg)] border border-[var(--ds-border)] px-3 py-1 rounded-md">{generatedQr}</p>
-          <ButtonSecondary onClick={() => setQrModalOpened(false)} className="w-full">
-            Cerrar
-          </ButtonSecondary>
-        </div>
+        )}
       </Modal>
 
       <Modal opened={scannerOpened} onClose={() => setScannerOpened(false)} title="Escanear QR de Orden" size="lg">
