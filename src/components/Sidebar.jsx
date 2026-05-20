@@ -51,25 +51,25 @@ const ROLE_LABELS = {
 
 const ROLE_STYLES = {
   ADMIN: {
-    background: "var(--ds-info-bg)",
-    border: "var(--ds-info-border)",
+    border: "1px solid rgba(99, 102, 241, 0.4)",
+    background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
     color: "var(--ds-info-text)",
   },
   MANAGER: {
-    background: "var(--ds-warning-bg)",
-    border: "var(--ds-warning-border)",
+    border: "1px solid rgba(245, 158, 11, 0.4)",
+    background: "linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%), var(--ds-surface)",
     color: "var(--ds-warning-text)",
   },
   EMPLOYEE: {
-    background: "var(--ds-success-bg)",
-    border: "var(--ds-success-border)",
+    border: "1px solid rgba(16, 185, 129, 0.4)",
+    background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
     color: "var(--ds-success-text)",
   },
 };
 
 const DEFAULT_ROLE_STYLE = {
+  border: "1px solid var(--ds-border)",
   background: "var(--ds-surface)",
-  border: "var(--ds-border)",
   color: "var(--ds-muted)",
 };
 
@@ -82,11 +82,11 @@ function RoleBadge({ rol }) {
       style={{
         display: "inline-block",
         fontSize: "0.6875rem",
-        fontWeight: 500,
+        fontWeight: 600,
         borderRadius: "999px",
-        padding: "2px 8px",
+        padding: "3px 8px",
         background: style.background,
-        border: `1px solid ${style.border}`,
+        border: style.border,
         color: style.color,
         alignSelf: "flex-start",
         fontFamily: "Inter, sans-serif",
