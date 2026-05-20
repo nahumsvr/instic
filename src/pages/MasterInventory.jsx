@@ -30,7 +30,21 @@ export default function MasterInventory() {
         size: "N/A",
         unitCost: 0,
         unitPrice: 0,
+        stockConfigs: [],
     });
+
+    // Inicializa los stockConfigs con todas las ubicaciones cuando se abre el modal de nuevo artículo
+    const buildStockConfigs = (locs) =>
+        locs.map((loc) => ({ locationId: loc.id_ubicacion, minStock: 0, maxStock: 0 }));
+
+    const updateStockConfig = (locationId, field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            stockConfigs: prev.stockConfigs.map((sc) =>
+                sc.locationId === locationId ? { ...sc, [field]: value } : sc
+            ),
+        }));
+    };
 
     const fetchLocations = useCallback(async () => {
         try {
@@ -89,6 +103,7 @@ export default function MasterInventory() {
             size: "N/A", // Default value
             unitCost: 0,
             unitPrice: 0,
+            stockConfigs: buildStockConfigs(locations),
         });
         setOpened(true);
     };
@@ -102,6 +117,7 @@ export default function MasterInventory() {
             size: item.size || "N/A",
             unitCost: item.costo_unitario || 0,
             unitPrice: item.precio_unitario || 0,
+            stockConfigs: [], // No se editan stockConfigs desde este modal
         });
         setOpened(true);
     };
@@ -141,6 +157,10 @@ export default function MasterInventory() {
             const method = isEdit ? "PATCH" : "POST";
 
             const payload = { ...formData };
+            // Solo enviar stockConfigs en creación y si hay al menos una ubicación configurada
+            if (isEdit || !payload.stockConfigs || payload.stockConfigs.length === 0) {
+                delete payload.stockConfigs;
+            }
 
             const res = await fetch(url, {
                 method,
@@ -457,11 +477,19 @@ export default function MasterInventory() {
                         borderRadius: "10px",
                         border: "1px solid var(--ds-border)",
                         boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
+                        display: "flex",
+                        flexDirection: "column",
                     },
                     header: {
                         backgroundColor: "var(--ds-surface)",
                         borderBottom: "1px solid var(--ds-border)",
                         marginBottom: "16px",
+                        flexShrink: 0,
+                    },
+                    body: {
+                        overflowY: "auto",
+                        maxHeight: "65vh",
+                        paddingRight: "8px",
                     },
                     close: {
                         color: "var(--ds-text)",
@@ -506,6 +534,62 @@ export default function MasterInventory() {
                             styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
                         />
                     </div>
+
+                    {/* Sección de stock mínimo y máximo por ubicación — solo al crear */}
+                    {!editingId && formData.stockConfigs && formData.stockConfigs.length > 0 && (
+                        <div>
+                            <p
+                                className="text-xs font-semibold uppercase tracking-wider mb-3"
+                                style={{ color: "var(--ds-muted)" }}
+                            >
+                                Stock por Ubicación
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                {formData.stockConfigs.map((sc) => {
+                                    const loc = locations.find((l) => l.id_ubicacion === sc.locationId);
+                                    return (
+                                        <div
+                                            key={sc.locationId}
+                                            className="p-3 rounded-lg"
+                                            style={{
+                                                border: "1px solid var(--ds-border)",
+                                                background: "var(--ds-bg)",
+                                            }}
+                                        >
+                                            <p
+                                                className="text-xs font-medium mb-2"
+                                                style={{ color: "var(--ds-text)" }}
+                                            >
+                                                {loc?.nombre ?? `Ubicación ${sc.locationId}`}
+                                            </p>
+                                            <div className="flex gap-3">
+                                                <NumberInput
+                                                    label="Stock mínimo"
+                                                    min={0}
+                                                    step={1}
+                                                    allowDecimal={false}
+                                                    className="flex-1"
+                                                    value={sc.minStock}
+                                                    onChange={(val) => updateStockConfig(sc.locationId, "minStock", val ?? 0)}
+                                                    styles={{ input: { backgroundColor: "var(--ds-surface)", borderColor: "var(--ds-border)" } }}
+                                                />
+                                                <NumberInput
+                                                    label="Stock máximo"
+                                                    min={0}
+                                                    step={1}
+                                                    allowDecimal={false}
+                                                    className="flex-1"
+                                                    value={sc.maxStock}
+                                                    onChange={(val) => updateStockConfig(sc.locationId, "maxStock", val ?? 0)}
+                                                    styles={{ input: { backgroundColor: "var(--ds-surface)", borderColor: "var(--ds-border)" } }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     <Group justify="space-between" mt="xl">
                         {editingId ? (
