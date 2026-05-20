@@ -22,15 +22,15 @@ export default function QrScanner({ onScan, onError, width = "100%", height = "1
 
     const start = async () => {
       // 1. Verificar contexto seguro (HTTPS o localhost)
-      if (!window.isSecureContext) {
-        const err = new Error(
-          "La cámara requiere HTTPS. Abre la app desde una dirección segura (https://)."
-        );
-        err.name = "InsecureContextError";
-        setCameraError(err);
-        if (onError) onError(err);
-        return;
-      }
+      // if (!window.isSecureContext) {
+      //   const err = new Error(
+      //     "La cámara requiere HTTPS. Abre la app desde una dirección segura (https://)."
+      //   );
+      //   err.name = "InsecureContextError";
+      //   setCameraError(err);
+      //   if (onError) onError(err);
+      //   return;
+      //}
 
       // 2. Verificar que la API existe
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {

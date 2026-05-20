@@ -178,7 +178,7 @@ export default function MobileWarehouse() {
     if (!code?.trim()) return;
     setScannerOpen(false);
 
-    const orderId = pendingOrder?.id_orden ?? pendingOrder?.id;
+    const orderId = pendingOrder?.qr_code ?? pendingOrder?.qr_code;
 
     // Si hay una orden pre-seleccionada, verificar que el código coincida
     if (pendingOrder && String(orderId) !== String(code.trim())) {
@@ -625,34 +625,21 @@ export default function MobileWarehouse() {
                 <Text fw={600} mb="xs" style={{ color: "var(--ds-text)" }}>
                   Artículos a recibir:
                 </Text>
-
+                {console.log(selectedOrder)}
+                <Group justify="space-between" mb={4}>
+                  <Text size="sm" style={{ color: "var(--ds-text)" }}>
+                    {selectedOrder?.article?.nombre}
+                  </Text>
+                  <Text
+                    size="sm"
+                    fw={600}
+                    ff="mono"
+                    style={{ color: "var(--ds-text)" }}
+                  >
+                    ×{selectedOrder.cantidad}
+                  </Text>
+                </Group>
                 {/* Orden con lista de items */}
-                {(selectedOrder.items ?? selectedOrder.detalles ?? []).map(
-                  (item, idx) => {
-                    const name =
-                      item.nombre ??
-                      item.name ??
-                      item.article?.nombre ??
-                      item.article?.name ??
-                      `Artículo #${item.id_articulo ?? item.articleId}`;
-                    const qty = item.cantidad ?? item.quantity;
-                    return (
-                      <Group justify="space-between" key={idx} mb={4}>
-                        <Text size="sm" style={{ color: "var(--ds-text)" }}>
-                          {name}
-                        </Text>
-                        <Text
-                          size="sm"
-                          fw={600}
-                          ff="mono"
-                          style={{ color: "var(--ds-text)" }}
-                        >
-                          ×{qty}
-                        </Text>
-                      </Group>
-                    );
-                  }
-                )}
 
                 {/* Orden plana (un solo artículo directo en la orden) */}
                 {!(selectedOrder.items ?? selectedOrder.detalles) &&
