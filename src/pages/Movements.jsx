@@ -51,14 +51,48 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 );
 
 const BadgeStatus = ({ status }) => {
-  let bg = "bg-[var(--ds-bg)]", text = "text-[var(--ds-muted)]", border = "border-[var(--ds-border)]", dot = false;
-  if (status === 'COMPLETED') { bg = 'bg-blue-500/10'; text = 'text-blue-600 dark:text-blue-400'; border = 'border-blue-500/20'; }
-  else if (status === 'PENDING') { bg = 'bg-yellow-500/10'; text = 'text-yellow-600 dark:text-yellow-400'; border = 'border-yellow-500/20'; dot = true; }
-  else if (status === 'CANCELLED') { bg = 'bg-[var(--ds-bg)]'; text = 'text-[var(--ds-muted)]'; border = 'border-[var(--ds-border)]'; }
-  else if (status === 'APPROVED' || status === 'IN_PROGRESS') { bg = 'bg-blue-500/10'; text = 'text-blue-600 dark:text-blue-400'; border = 'border-blue-500/20'; dot = true; }
+  let style = {};
+  let dot = false;
+
+  if (status === 'COMPLETED') {
+    style = {
+      border: "1px solid rgba(14, 165, 233, 0.4)",
+      background: "linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-info-text)",
+    };
+  } else if (status === 'PENDING') {
+    style = {
+      border: "1px solid rgba(245, 158, 11, 0.4)",
+      background: "linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-warning-text)",
+    };
+    dot = true;
+  } else if (status === 'CANCELLED') {
+    style = {
+      border: "1px solid rgba(244, 63, 94, 0.4)",
+      background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-danger-text)",
+    };
+  } else if (status === 'APPROVED' || status === 'IN_PROGRESS') {
+    style = {
+      border: "1px solid rgba(99, 102, 241, 0.4)",
+      background: "linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 100%), var(--ds-surface)",
+      color: "var(--ds-info-text)",
+    };
+    dot = true;
+  } else {
+    style = {
+      border: "1px solid var(--ds-border)",
+      background: "var(--ds-surface)",
+      color: "var(--ds-muted)",
+    };
+  }
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium border ${bg} ${text} ${border}`}>
+    <span 
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+      style={style}
+    >
       {dot && <span className="w-1.5 h-1.5 rounded-full bg-current"></span>}
       {status}
     </span>
