@@ -580,6 +580,58 @@ function Ordenes() {
   const [selectedLocation, setSelectedLocation] = useState(getInitialWarehouseLocation().id || "all");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
+  const [articleInventory, setArticleInventory] = useState(null);
+  const [loadingInventory, setLoadingInventory] = useState(false);
+
+  const fetchArticleInventory = async (articleId) => {
+    if (!articleId) {
+      setArticleInventory(null);
+      return;
+    }
+    setLoadingInventory(true);
+    try {
+      const res = await fetch(`${API_URL}/inventory?articleId=${articleId}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener existencias del artículo");
+      const invData = await res.json();
+      setArticleInventory(invData);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+
+  const handleArticleChange = async (val) => {
+    setFormData((prev) => ({
+      ...prev,
+      articleId: val || "",
+      originId: "",
+      destinationId: "",
+    }));
+    await fetchArticleInventory(val);
+  };
+
+  const getLocationLabel = (loc) => {
+    const locId = loc.id_ubicacion ?? loc.id;
+    const baseName = loc.nombre || loc.name || `Ubicación ${locId}`;
+    if (!formData.articleId || !articleInventory) {
+      return baseName;
+    }
+    const invLoc = (articleInventory.locations ?? []).find(
+      (l) => (l.location?.id ?? l.locationId) === locId
+    );
+    const stock = invLoc ? (invLoc.stockActual ?? invLoc.stock_actual ?? 0) : 0;
+    return `${baseName} — ${stock} uds disponibles`;
+  };
+
+  const handleCloseModal = () => {
+    setModalOpened(false);
+    setFormData({ articleId: '', quantity: 1, originId: '', destinationId: '' });
+    setArticleInventory(null);
+  };
+
   const filteredOrders = orders.filter((item) => {
     if (selectedLocation !== "all") {
       const originId = item.origin?.id_ubicacion ?? item.origin?.id ?? item.originId;
@@ -676,6 +728,8 @@ function Ordenes() {
       });
       setIsNewOrder(true);
       setModalOpened(false);
+      setFormData({ articleId: '', quantity: 1, originId: '', destinationId: '' });
+      setArticleInventory(null);
       setQrModalOpened(true);
       fetchOrders();
     } catch (err) {
@@ -927,13 +981,13 @@ function Ordenes() {
         </table>
       </div>
 
-      <Modal opened={modalOpened} onClose={() => setModalOpened(false)} title="Generar Orden de Reabastecimiento" shadow="0 8px 40px rgba(0,0,0,0.12)">
+      <Modal opened={modalOpened} onClose={handleCloseModal} title="Generar Orden de Reabastecimiento" shadow="0 8px 40px rgba(0,0,0,0.12)">
         <form onSubmit={handleGenerateOrder} className="flex flex-col gap-4">
           <Select
             label="Artículo"
             data={articles.map(a => ({ value: (a.id_articulo || a.id || '').toString(), label: `${a.codigo || a.code} - ${a.nombre || a.name}` }))}
             value={formData.articleId}
-            onChange={(v) => setFormData({ ...formData, articleId: v })}
+            onChange={handleArticleChange}
             required
             searchable
           />
@@ -941,25 +995,47 @@ function Ordenes() {
             label="Cantidad"
             value={formData.quantity}
             onChange={(v) => setFormData({ ...formData, quantity: v })}
-            min={1} required
+            min={1}
+            required
+            disabled={!formData.articleId || loadingInventory}
           />
           <Select
             label="Origen (Proveedor / Almacén)"
-            data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
+            placeholder={
+              !formData.articleId
+                ? "Selecciona un artículo primero"
+                : loadingInventory
+                ? "Cargando existencias..."
+                : "Selecciona origen"
+            }
+            data={locations
+              .filter(l => (l.id_ubicacion || l.id || '').toString() !== formData.destinationId)
+              .map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: getLocationLabel(l) }))}
             value={formData.originId}
             onChange={(v) => setFormData({ ...formData, originId: v })}
             required
+            disabled={!formData.articleId || loadingInventory}
           />
           <Select
             label="Destino (Tienda)"
-            data={locations.map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: l.nombre || l.name }))}
+            placeholder={
+              !formData.articleId
+                ? "Selecciona un artículo primero"
+                : loadingInventory
+                ? "Cargando existencias..."
+                : "Selecciona destino"
+            }
+            data={locations
+              .filter(l => (l.id_ubicacion || l.id || '').toString() !== formData.originId)
+              .map(l => ({ value: (l.id_ubicacion || l.id || '').toString(), label: getLocationLabel(l) }))}
             value={formData.destinationId}
             onChange={(v) => setFormData({ ...formData, destinationId: v })}
             required
+            disabled={!formData.articleId || loadingInventory}
           />
           <Group justify="flex-end" mt="xl">
-            <ButtonSecondary type="button" onClick={() => setModalOpened(false)}>Cancelar</ButtonSecondary>
-            <ButtonPrimary type="submit" disabled={!formData.articleId || !formData.originId || !formData.destinationId}>
+            <ButtonSecondary type="button" onClick={handleCloseModal}>Cancelar</ButtonSecondary>
+            <ButtonPrimary type="submit" disabled={!formData.articleId || !formData.originId || !formData.destinationId || loadingInventory}>
               Generar
             </ButtonPrimary>
           </Group>
