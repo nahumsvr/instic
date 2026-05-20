@@ -117,8 +117,8 @@ export default function MasterInventory() {
             name: item.nombre,
             category: item.category || "General",
             size: item.size || "N/A",
-            unitCost: item.costo_unitario || 0,
-            unitPrice: item.precio_unitario || 0,
+            unitCost: Number(item.costo_unitario) || 0,
+            unitPrice: Number(item.precio_unitario) || 0,
             stockConfigs: [],
         };
 
@@ -196,7 +196,11 @@ export default function MasterInventory() {
             const url = isEdit ? `${API_BASE_URL}/articles/${editingId}` : `${API_BASE_URL}/articles`;
             const method = isEdit ? "PATCH" : "POST";
 
-            const payload = { ...formData };
+            const payload = {
+                ...formData,
+                unitCost: Number(formData.unitCost) || 0,
+                unitPrice: Number(formData.unitPrice) || 0,
+            };
             // Enviar stockConfigs en creación, o en edición si hay ubicación filtrada con config
             if (!payload.stockConfigs || payload.stockConfigs.length === 0) {
                 delete payload.stockConfigs;
