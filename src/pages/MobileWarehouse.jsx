@@ -23,6 +23,7 @@ const BadgeStatus = ({ status }) => {
   let style;
   let dot = false;
   const s = String(status || '').toUpperCase();
+  let text = "";
 
   if (s === 'COMPLETED') {
     style = {
@@ -30,6 +31,7 @@ const BadgeStatus = ({ status }) => {
       background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
       color: "var(--ds-success-text)",
     };
+    text = "Completado";
   } else if (s === 'PENDING') {
     style = {
       border: "1px solid rgba(245, 158, 11, 0.4)",
@@ -37,12 +39,14 @@ const BadgeStatus = ({ status }) => {
       color: "var(--ds-warning-text)",
     };
     dot = true;
+    text = "Pendiente";
   } else if (s === 'CANCELLED') {
     style = {
       border: "1px solid rgba(244, 63, 94, 0.4)",
       background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
       color: "var(--ds-danger-text)",
     };
+    text = "Cancelado";
   } else if (s === 'APPROVED') {
     style = {
       border: "1px solid rgba(139, 92, 246, 0.4)",
@@ -50,6 +54,7 @@ const BadgeStatus = ({ status }) => {
       color: "rgba(139, 92, 246, 1)",
     };
     dot = true;
+    text = "Aprobado";
   } else if (s === 'IN_PROGRESS') {
     style = {
       border: "1px solid var(--ds-info-border)",
@@ -57,12 +62,14 @@ const BadgeStatus = ({ status }) => {
       color: "var(--ds-info-text)",
     };
     dot = true;
+    text = "En Tránsito";
   } else {
     style = {
       border: "1px solid var(--ds-border)",
       background: "var(--ds-surface)",
       color: "var(--ds-muted)",
     };
+    text = "Sin estado";
   }
 
   return (
@@ -71,7 +78,7 @@ const BadgeStatus = ({ status }) => {
       style={style}
     >
       {dot && <span className="w-1.5 h-1.5 rounded-full bg-current"></span>}
-      {status}
+      {text}
     </span>
   );
 };
@@ -90,10 +97,10 @@ const OrderStepper = ({ status }) => {
     <div className="flex items-center justify-between w-full my-4 relative">
       {/* Línea conectora de fondo */}
       <div className="absolute top-[14px] left-0 right-0 h-[2px] bg-[var(--ds-border)] z-0" />
-      
+
       {/* Línea conectora activa */}
       {currentIdx > 0 && (
-        <div 
+        <div
           className="absolute top-[14px] left-0 h-[2px] bg-[var(--ds-accent)] z-0 transition-all duration-300"
           style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
         />
@@ -164,7 +171,7 @@ const OrderStepper = ({ status }) => {
             <div style={dotStyle}>
               {isCompleted ? <Check width={14} height={14} /> : idx + 1}
             </div>
-            <span 
+            <span
               className={`text-[0.6875rem] font-medium mt-1 ${isActive ? "text-[var(--ds-text)] font-semibold" : "text-[var(--ds-muted)]"}`}
             >
               {step.label}
@@ -263,11 +270,11 @@ export default function MobileWarehouse() {
 
   useEffect(() => {
     if (!locationId) {
-      fetchLocations();
+      Promise.resolve().then(() => fetchLocations());
     } else {
-      fetchOrders();
+      Promise.resolve().then(() => fetchOrders());
     }
-  }, [locationId]); // eslint-disable-line
+  }, [locationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Seleccionar ubicación ───────────────────────────────────────────────
   const handleSelectLocation = (loc) => {
@@ -335,19 +342,111 @@ export default function MobileWarehouse() {
 
   const processScannedCode = async (code) => {
     if (!code?.trim()) return;
+    const scannedCode = code.trim();
     setScannerOpen(false);
 
-    const orderId = pendingOrder?.qr_code ?? pendingOrder?.qr_code;
+    // Caso A: Hay un pedido pre-seleccionado
+    if (pendingOrder) {
+      const orderId = pendingOrder.id_orden ?? pendingOrder.id;
+      const orderQr = pendingOrder.qr_code;
 
-    // Si hay una orden pre-seleccionada, verificar que el código coincida
-    if (pendingOrder && String(orderId) !== String(code.trim())) {
-      toast.error(
-        `El código escaneado (${code.trim()}) no coincide con el pedido seleccionado (${orderId})`
-      );
+      if (String(orderId) !== scannedCode && String(orderQr) !== scannedCode) {
+        toast.error(
+          `El código escaneado (${scannedCode}) no coincide con el pedido seleccionado (#${orderId})`
+        );
+        return;
+      }
+
+      const status = (pendingOrder.estado ?? pendingOrder.status ?? "").toUpperCase();
+      if (status !== "IN_PROGRESS") {
+        let statusMessage = status;
+        if (status === "PENDING") statusMessage = "Pendiente";
+        else if (status === "APPROVED") statusMessage = "Aprobado";
+        else if (status === "COMPLETED") statusMessage = "Completado";
+        else if (status === "CANCELLED") statusMessage = "Cancelado";
+
+        toast.error(`El pedido #${orderId} no se puede recibir porque no está en proceso (Estado actual: ${statusMessage})`);
+        return;
+      }
+
+      await fetchOrderDetail(orderQr);
       return;
     }
 
-    await fetchOrderDetail(orderId ?? code.trim());
+    // Caso B: Escaneo autónomo (sin pedido pre-seleccionado)
+    // 1. Buscar coincidencia localmente en la lista de pedidos del almacén actual
+    const foundOrder = orders.find((o) => {
+      const oid = o.id_orden ?? o.id;
+      const oqr = o.qr_code;
+      return String(oid) === scannedCode || (oqr && String(oqr) === scannedCode);
+    });
+
+    if (foundOrder) {
+      const orderId = foundOrder.id_orden ?? foundOrder.id;
+      const orderQr = foundOrder.qr_code;
+      const status = (foundOrder.estado ?? foundOrder.status ?? "").toUpperCase();
+
+      if (status !== "IN_PROGRESS") {
+        let statusMessage = status;
+        if (status === "PENDING") statusMessage = "Pendiente";
+        else if (status === "APPROVED") statusMessage = "Aprobado";
+        else if (status === "COMPLETED") statusMessage = "Completado";
+        else if (status === "CANCELLED") statusMessage = "Cancelado";
+
+        toast.error(
+          `El pedido #${orderId} no se puede recibir porque no está en proceso (Estado actual: ${statusMessage})`
+        );
+        return;
+      }
+
+      await fetchOrderDetail(orderQr);
+      toast.success(`Pedido #${orderId} seleccionado automáticamente`);
+      return;
+    }
+
+    // 2. Si no se encuentra en el listado local de este almacén, lo consultamos a la API para verificar si existe o pertenece a otro almacén
+    setLoadingDetail(true);
+    setDetailOpen(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${scannedCode}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        throw new Error(`El pedido #${scannedCode} no existe en el sistema`);
+      }
+      const apiOrder = await res.json();
+
+      // Validar si pertenece a esta ubicación
+      const destId = apiOrder.destinationId ?? apiOrder.id_destino ?? apiOrder.destination?.id_ubicacion ?? apiOrder.destination?.id;
+      if (String(destId) !== String(locationId)) {
+        throw new Error(
+          `El pedido #${scannedCode} pertenece a otra ubicación, no al almacén actual (${locationName})`
+        );
+      }
+
+      // Validar si está en tránsito / en proceso
+      const status = (apiOrder.estado ?? apiOrder.status ?? "").toUpperCase();
+      if (status !== "IN_PROGRESS") {
+        let statusMessage = status;
+        if (status === "PENDING") statusMessage = "Pendiente";
+        else if (status === "APPROVED") statusMessage = "Aprobado";
+        else if (status === "COMPLETED") statusMessage = "Completado";
+        else if (status === "CANCELLED") statusMessage = "Cancelado";
+
+        throw new Error(
+          `El pedido #${scannedCode} no se puede recibir porque no está en proceso (Estado actual: ${statusMessage})`
+        );
+      }
+
+      // Si todo es válido, cargar los detalles
+      setSelectedOrder(apiOrder);
+      toast.success(`Pedido #${apiOrder.id_orden ?? apiOrder.id} seleccionado automáticamente`);
+    } catch (err) {
+      toast.error(err.message);
+      setDetailOpen(false);
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
   // ─── Detalle de la orden ─────────────────────────────────────────────────
@@ -564,17 +663,40 @@ export default function MobileWarehouse() {
               </span>
             </Text>
           </div>
-          <Button
-            variant="subtle"
-            color="gray"
-            size="xs"
-            px="xs"
-            loading={loadingOrders}
-            onClick={fetchOrders}
-            title="Actualizar pedidos"
-          >
-            <ArrowRotateLeft width={16} height={16} />
-          </Button>
+          <Group gap="xs">
+            <button
+              onClick={() => openOrderScanner(null)}
+              className="flex items-center gap-2 px-4 h-[38px] rounded-md text-sm font-semibold cursor-pointer transition-all duration-150 ease-in-out active:scale-95"
+              style={{
+                border: "1px solid rgba(245, 158, 11, 0.5)",
+                background: "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.04) 100%), var(--ds-surface)",
+                color: "rgba(245, 158, 11, 1)",
+                boxShadow: "0 0 0 1px rgba(245, 158, 11, 0.08), 0 2px 8px rgba(245, 158, 11, 0.15)",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(245, 158, 11, 0.08) 100%), var(--ds-surface)";
+                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(245, 158, 11, 0.15), 0 4px 16px rgba(245, 158, 11, 0.25)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.04) 100%), var(--ds-surface)";
+                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(245, 158, 11, 0.08), 0 2px 8px rgba(245, 158, 11, 0.15)";
+              }}
+            >
+              <Camera width={16} height={16} />
+              Escanear QR
+            </button>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="xs"
+              px="xs"
+              loading={loadingOrders}
+              onClick={fetchOrders}
+              title="Actualizar pedidos"
+            >
+              <ArrowRotateLeft width={16} height={16} />
+            </Button>
+          </Group>
         </Group>
 
         {/* Selector de Pestañas SectionNav */}
@@ -609,8 +731,8 @@ export default function MobileWarehouse() {
               {activeSection === "active" ? "Todo al día" : "Sin registros"}
             </Text>
             <Text c="dimmed">
-              {activeSection === "active" 
-                ? "No tienes pedidos pendientes de gestionar." 
+              {activeSection === "active"
+                ? "No tienes pedidos pendientes de gestionar."
                 : "No se encontraron pedidos en esta categoría."}
             </Text>
           </Stack>
@@ -937,7 +1059,9 @@ export default function MobileWarehouse() {
         onClose={() => setScannerOpen(false)}
         title={
           <Text fw={600} style={{ color: "var(--ds-text)" }}>
-            Escanear Pedido #{pendingOrder?.id_orden ?? pendingOrder?.id}
+            {pendingOrder
+              ? `Escanear Pedido #${pendingOrder.id_orden ?? pendingOrder.id}`
+              : "Escanear Pedido QR"}
           </Text>
         }
         size="md"
@@ -966,7 +1090,11 @@ export default function MobileWarehouse() {
 
           <div className="flex gap-2">
             <TextInput
-              placeholder={`Ej. ${pendingOrder?.id_orden ?? pendingOrder?.id ?? "123"}`}
+              placeholder={
+                pendingOrder
+                  ? `Ej. ${pendingOrder.id_orden ?? pendingOrder.id}`
+                  : "Ingresa el ID del pedido"
+              }
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               onKeyDown={(e) =>
@@ -994,19 +1122,19 @@ export default function MobileWarehouse() {
         </div>
       </Modal>
 
-      {/* ── Detalle y Confirmar Drawer ─────────────────────────────────── */}
-      <Drawer
+      {/* ── Detalle y Confirmar Modal ─────────────────────────────────── */}
+      <Modal
         opened={detailOpen}
         onClose={() => setDetailOpen(false)}
-        position="bottom"
-        size="auto"
         title={
-          <Text fw={700} size="xl" style={{ color: "var(--ds-text)" }}>
+          <Text fw={700} size="lg" style={{ color: "var(--ds-text)" }}>
             Detalle de Recepción
           </Text>
         }
+        centered
+        size="md"
         styles={{
-          content: { backgroundColor: "var(--ds-surface)" },
+          content: { backgroundColor: "var(--ds-surface)", border: "1px solid var(--ds-border)" },
           header: { backgroundColor: "var(--ds-surface)" },
         }}
       >
@@ -1016,7 +1144,7 @@ export default function MobileWarehouse() {
           </Group>
         ) : (
           selectedOrder && (
-            <Stack gap="md" pb="xl">
+            <Stack gap="md">
               <Group justify="space-between">
                 <Text c="dimmed">ID Pedido:</Text>
                 <Text fw={600} ff="mono" style={{ color: "var(--ds-text)" }}>
@@ -1087,11 +1215,11 @@ export default function MobileWarehouse() {
               </Card>
 
               <Button
-                size="xl"
+                size="md"
                 fullWidth
                 mt="md"
                 loading={confirming}
-                leftSection={<Check width={24} height={24} />}
+                leftSection={<Check width={18} height={18} />}
                 onClick={handleConfirmDelivery}
                 style={{
                   backgroundColor: "var(--ds-accent)",
@@ -1103,7 +1231,30 @@ export default function MobileWarehouse() {
             </Stack>
           )
         )}
-      </Drawer>
+      </Modal>
+
+      {/* Botón Flotante para Escanear QR */}
+      <button
+        onClick={() => openOrderScanner(null)}
+        className="fixed bottom-6 right-6 flex items-center justify-center w-12 h-12 rounded-full cursor-pointer transition-all duration-150 ease-in-out active:scale-95 z-50 shadow-lg"
+        style={{
+          border: "1px solid rgba(245, 158, 11, 0.5)",
+          background: "linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.1) 100%), var(--ds-surface)",
+          color: "rgba(245, 158, 11, 1)",
+          boxShadow: "0 4px 12px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.15)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = "linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(245, 158, 11, 0.15) 100%), var(--ds-surface)";
+          e.currentTarget.style.boxShadow = "0 6px 20px rgba(245, 158, 11, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.2)";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = "linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.1) 100%), var(--ds-surface)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.15)";
+        }}
+        title="Escanear QR de pedido"
+      >
+        <Camera width={24} height={24} />
+      </button>
     </Box>
   );
 }

@@ -54,6 +54,7 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 const BadgeStatus = ({ status }) => {
   let style;
   let dot = false;
+  let text = "";
 
   if (status === 'COMPLETED') {
     style = {
@@ -61,6 +62,7 @@ const BadgeStatus = ({ status }) => {
       background: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 100%), var(--ds-surface)",
       color: "var(--ds-success-text)",
     };
+    text = "Completado";
   } else if (status === 'PENDING') {
     style = {
       border: "1px solid rgba(245, 158, 11, 0.4)",
@@ -68,12 +70,14 @@ const BadgeStatus = ({ status }) => {
       color: "var(--ds-warning-text)",
     };
     dot = true;
+    text = "Pendiente"
   } else if (status === 'CANCELLED') {
     style = {
       border: "1px solid rgba(244, 63, 94, 0.4)",
       background: "linear-gradient(180deg, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 100%), var(--ds-surface)",
       color: "var(--ds-danger-text)",
     };
+    text = "Cancelado";
   } else if (status === 'APPROVED') {
     style = {
       border: "1px solid rgba(139, 92, 246, 0.4)",
@@ -81,6 +85,7 @@ const BadgeStatus = ({ status }) => {
       color: "rgba(139, 92, 246, 1)",
     };
     dot = true;
+    text = "Aprobado";
   } else if (status === 'IN_PROGRESS') {
     style = {
       border: "1px solid var(--ds-info-border)",
@@ -88,12 +93,14 @@ const BadgeStatus = ({ status }) => {
       color: "var(--ds-info-text)",
     };
     dot = true;
+    text = "En trancito";
   } else {
     style = {
       border: "1px solid var(--ds-border)",
       background: "var(--ds-surface)",
       color: "var(--ds-muted)",
     };
+    text = status.toUpperCase();
   }
 
   return (
@@ -102,7 +109,7 @@ const BadgeStatus = ({ status }) => {
       style={style}
     >
       {dot && <span className="w-1.5 h-1.5 rounded-full bg-current"></span>}
-      {status}
+      {text}
     </span>
   );
 };
