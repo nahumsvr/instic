@@ -524,6 +524,25 @@ function Ordenes() {
   const [formData, setFormData] = useState({ articleId: '', quantity: 1, originId: '', destinationId: '' });
   const [articles, setArticles] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(getInitialWarehouseLocation().id || "all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+
+  const filteredOrders = orders.filter((item) => {
+    if (selectedLocation !== "all") {
+      const originId = item.origin?.id_ubicacion ?? item.origin?.id ?? item.originId;
+      const destId = item.destination?.id_ubicacion ?? item.destination?.id ?? item.destinationId;
+      if (String(originId) !== String(selectedLocation) && String(destId) !== String(selectedLocation)) {
+        return false;
+      }
+    }
+    if (selectedStatus !== "all") {
+      const status = (item.estado ?? item.status)?.toUpperCase();
+      if (status !== selectedStatus) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const handleShowQrModal = (item) => {
     const qrCode = item.qr_code?.split('/').pop() || item.qrCode || "ORD-UNKNOWN";
@@ -773,8 +792,8 @@ function Ordenes() {
   };
 
   return (
-    <div>
-      <Group justify="space-between" mb="lg">
+    <div className="flex flex-col gap-6">
+      <Group justify="space-between">
         <ButtonSecondary onClick={() => { setScannerOpened(true); setManualCode(""); }}>
           Escanear QR
         </ButtonSecondary>
@@ -782,6 +801,39 @@ function Ordenes() {
           <Plus width={16} height={16} /> Nueva Orden
         </ButtonPrimary>
       </Group>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Select
+          label="Filtrar por Ubicación"
+          placeholder="Todas las ubicaciones"
+          data={[
+            { value: "all", label: "Todas las ubicaciones" },
+            ...locations.map((l) => ({
+              value: (l.id_ubicacion ?? l.id ?? "").toString(),
+              label: l.nombre ?? l.name ?? "",
+            })),
+          ]}
+          value={selectedLocation}
+          onChange={(val) => setSelectedLocation(val || "all")}
+          searchable
+          clearable
+        />
+        <Select
+          label="Filtrar por Estado"
+          placeholder="Todos los estados"
+          data={[
+            { value: "all", label: "Todos los estados" },
+            { value: "PENDING", label: "Pendiente" },
+            { value: "APPROVED", label: "Aprobada" },
+            { value: "IN_PROGRESS", label: "En Progreso" },
+            { value: "COMPLETED", label: "Completada" },
+            { value: "CANCELLED", label: "Cancelada" },
+          ]}
+          value={selectedStatus}
+          onChange={(val) => setSelectedStatus(val || "all")}
+          clearable
+        />
+      </div>
 
       <div className="overflow-x-auto rounded-[8px] border border-[var(--ds-border)]">
         <table className="w-full text-left border-collapse text-[0.875rem]">
@@ -797,7 +849,7 @@ function Ordenes() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((item, idx) => (
+            {filteredOrders.map((item, idx) => (
               <tr key={item.id_orden} className={`border-b border-[var(--ds-border)] hover:bg-[var(--ds-bg)] transition-colors ${idx % 2 === 0 ? 'bg-[var(--ds-surface)]' : 'bg-[var(--ds-bg)]'}`}>
                 <td className="px-4 py-3 font-mono text-[var(--ds-subtle)] w-50">{item.qr_code?.split('/').pop() || '-'}</td>
                 <td className="px-4 py-3 text-[var(--ds-text)]">{item.article?.nombre || item.article?.name || item.articleId}</td>
@@ -817,8 +869,8 @@ function Ordenes() {
                 </td>
               </tr>
             ))}
-            {orders.length === 0 && !loading && (
-              <tr><td colSpan={7} className="text-center py-8 text-[var(--ds-muted)]">No hay órdenes registradas.</td></tr>
+            {filteredOrders.length === 0 && !loading && (
+              <tr><td colSpan={7} className="text-center py-8 text-[var(--ds-muted)]">No hay órdenes registradas que cumplan con los criterios.</td></tr>
             )}
           </tbody>
         </table>
