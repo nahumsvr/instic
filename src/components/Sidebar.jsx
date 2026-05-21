@@ -122,8 +122,18 @@ function SidebarContent({ onNavigate }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  const userRole = (user?.rol ?? user?.role ?? "").toUpperCase();
+  const isUserManager = userRole === "MANAGER";
+  const isUserEmployee = userRole === "EMPLOYEE" || userRole === "EMPLEADO";
+
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.to === "/mobile-warehouse" && isUserManager) return false;
+    if (item.to === "/dashboard" && isUserEmployee) return false;
+    return true;
+  });
+
   const navItems = [
-    ...NAV_ITEMS,
+    ...filteredNavItems,
     ...(isAdmin(user) ? [{ label: "Administración", to: "/admin", icon: Shield, accent: [244, 63, 94] }] : []),
   ];
 

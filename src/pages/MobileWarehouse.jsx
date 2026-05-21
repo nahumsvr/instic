@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { Navigate } from "react-router";
 import {
-  Container, Card, Text, Button, Drawer, Modal,
+  Container, Card, Text, Button, Modal,
   TextInput, Stack, Group, Title, Loader, Alert, Box, NumberInput
 } from "@mantine/core";
 import QrScanner from "../components/QrScanner";
@@ -23,7 +24,7 @@ const BadgeStatus = ({ status }) => {
   let style;
   let dot = false;
   const s = String(status || '').toUpperCase();
-  let text = "";
+  let text;
 
   if (s === 'COMPLETED') {
     style = {
@@ -184,7 +185,7 @@ const OrderStepper = ({ status }) => {
 };
 
 export default function MobileWarehouse() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // --- Estado de ubicación seleccionada ---
   const [location, setLocation] = useState(getInitialWarehouseLocation);
@@ -269,12 +270,20 @@ export default function MobileWarehouse() {
   };
 
   useEffect(() => {
+    const isManager = (user?.rol ?? user?.role ?? "").toUpperCase() === "MANAGER";
+    if (isManager) return;
+
     if (!locationId) {
       Promise.resolve().then(() => fetchLocations());
     } else {
       Promise.resolve().then(() => fetchOrders());
     }
-  }, [locationId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [locationId, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isManager = (user?.rol ?? user?.role ?? "").toUpperCase() === "MANAGER";
+  if (isManager) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // ─── Seleccionar ubicación ───────────────────────────────────────────────
   const handleSelectLocation = (loc) => {

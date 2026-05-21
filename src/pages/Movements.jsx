@@ -7,6 +7,7 @@ import QrScanner from "../components/QrScanner";
 import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare, Copy, Check } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
 import { getInitialWarehouseLocation } from "../utils/warehouseLocation";
+import { useAuth } from "../context/AuthContext";
 
 /* ================= COPY CODE BUTTON ================= */
 function CopyCodeButton({ code }) {
@@ -88,7 +89,7 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 const BadgeStatus = ({ status }) => {
   let style;
   let dot = false;
-  let text = "";
+  let text;
 
   if (status === 'COMPLETED') {
     style = {
@@ -150,6 +151,20 @@ const BadgeStatus = ({ status }) => {
 
 export default function Movimientos() {
   const [activeTab, setActiveTab] = useState("historial");
+  const { user } = useAuth();
+
+  const userRole = (user?.rol ?? user?.role ?? "").toUpperCase();
+  const isEmployee = userRole === "EMPLOYEE" || userRole === "EMPLEADO";
+
+  useEffect(() => {
+    if (activeTab === "ordenes" && isEmployee) {
+      setActiveTab("historial");
+    }
+  }, [activeTab, isEmployee]);
+
+  const filteredSections = SECTIONS.filter(
+    (sec) => !(sec.id === "ordenes" && isEmployee)
+  );
 
   return (
     <div className="bg-[var(--ds-bg)] text-[var(--ds-text)] p-8">
@@ -159,7 +174,7 @@ export default function Movimientos() {
         </h1>
 
         <SectionNav
-          sections={SECTIONS}
+          sections={filteredSections}
           activeTab={activeTab}
           onChange={setActiveTab}
           ariaLabel="Apartados de movimientos"
@@ -178,7 +193,7 @@ export default function Movimientos() {
           </Card>
         )}
 
-        {activeTab === "ordenes" && (
+        {activeTab === "ordenes" && !isEmployee && (
           <Card>
             <Ordenes />
           </Card>
@@ -470,10 +485,17 @@ function Registrar() {
       <Select
         label="Tipo de Movimiento"
         value={type}
-        onChange={(val) => setType(val)}
+        onChange={(val) => {
+          setType(val);
+          setFormData((prev) => ({
+            ...prev,
+            originId: '',
+            destinationId: '',
+          }));
+        }}
         data={[
-          { value: 'input', label: 'Entrada' },
-          { value: 'output', label: 'Salida' },
+          { value: 'input', label: 'compra (entrada)' },
+          { value: 'output', label: 'venta (salida)' },
         ]}
         required
       />
@@ -515,28 +537,6 @@ function Registrar() {
           value={formData.destinationId}
           onChange={(val) => setFormData({ ...formData, destinationId: val })}
           required
-        />
-      )}
-
-      {type === 'input' && (
-        <Select
-          label="Ubicación Origen (Opcional - Proveedor externo)"
-          placeholder="Selecciona origen si aplica"
-          data={locationOptions}
-          value={formData.originId}
-          onChange={(val) => setFormData({ ...formData, originId: val })}
-          clearable
-        />
-      )}
-
-      {type === 'output' && (
-        <Select
-          label="Ubicación Destino (Opcional - Venta final)"
-          placeholder="Selecciona destino si aplica"
-          data={locationOptions}
-          value={formData.destinationId}
-          onChange={(val) => setFormData({ ...formData, destinationId: val })}
-          clearable
         />
       )}
 

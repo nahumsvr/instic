@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Navigate } from "react-router";
 import { Box, Container, Title, Card, Text, Group, Badge, Button, Loader, Alert, Stack, Grid, Modal, NumberInput, Select } from "@mantine/core";
 import { CircleDollar, ShoppingCart, Boxes3, CircleInfo } from '@gravity-ui/icons';
 import { toast } from "sonner";
@@ -21,7 +22,7 @@ console.log(API_URL);
 const ACTIVE_ORDER_STATUSES = ["PENDING", "APPROVED", "IN_PROGRESS"];
 
 export default function Dashboard() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [data, setData] = useState({
     articles: [],
@@ -67,8 +68,12 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    const userRole = (user?.rol ?? user?.role ?? "").toUpperCase();
+    const isEmployee = userRole === "EMPLOYEE" || userRole === "EMPLEADO";
+    if (isEmployee) return;
+
     fetchData();
-  }, []);
+  }, [user, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Acción "Pedir" (inteligente) ───────────────────────────────────── */
   const [pedirLoading, setPedirLoading] = useState({});
@@ -77,6 +82,12 @@ export default function Dashboard() {
   const [smartModal, setSmartModal] = useState(null);
   const [smartForm, setSmartForm] = useState({ originId: '', quantity: 1 });
   const [smartSaving, setSmartSaving] = useState(false);
+
+  const userRole = (user?.rol ?? user?.role ?? "").toUpperCase();
+  const isEmployee = userRole === "EMPLOYEE" || userRole === "EMPLEADO";
+  if (isEmployee) {
+    return <Navigate to="/mobile-warehouse" replace />;
+  }
 
   /**
    * Consulta el inventario del artículo y decide si crear una Orden
