@@ -115,10 +115,15 @@ export default function LoginPage() {
       toast.success("Sesión iniciada correctamente");
 
       // Redirige según el rol
-      if (rol === "ADMIN" || rol === "MANAGER") {
-        navigate("/movements");
+      const roleUpper = String(rol || '').toUpperCase();
+      if (roleUpper === "ADMIN") {
+        navigate("/admin");
+      } else if (roleUpper === "MANAGER") {
+        navigate("/dashboard");
+      } else if (roleUpper === "EMPLOYEE" || roleUpper === "EMPLEADO") {
+        navigate("/mobile-warehouse");
       } else {
-        navigate("/movements");
+        navigate("/dashboard");
       }
     } catch (err) {
       // Error de API → toast no bloqueante
