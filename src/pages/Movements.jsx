@@ -7,6 +7,7 @@ import QrScanner from "../components/QrScanner";
 import { Plus, Clock, FilePlus, QrCode, Printer, ArrowDownToSquare, Copy, Check } from "@gravity-ui/icons";
 import SectionNav from "../components/SectionNav";
 import { getInitialWarehouseLocation } from "../utils/warehouseLocation";
+import { useAuth } from "../context/AuthContext";
 
 /* ================= COPY CODE BUTTON ================= */
 function CopyCodeButton({ code }) {
@@ -150,6 +151,20 @@ const BadgeStatus = ({ status }) => {
 
 export default function Movimientos() {
   const [activeTab, setActiveTab] = useState("historial");
+  const { user } = useAuth();
+
+  const userRole = (user?.rol ?? user?.role ?? "").toUpperCase();
+  const isEmployee = userRole === "EMPLOYEE" || userRole === "EMPLEADO";
+
+  useEffect(() => {
+    if (activeTab === "ordenes" && isEmployee) {
+      setActiveTab("historial");
+    }
+  }, [activeTab, isEmployee]);
+
+  const filteredSections = SECTIONS.filter(
+    (sec) => !(sec.id === "ordenes" && isEmployee)
+  );
 
   return (
     <div className="bg-[var(--ds-bg)] text-[var(--ds-text)] p-8">
@@ -159,7 +174,7 @@ export default function Movimientos() {
         </h1>
 
         <SectionNav
-          sections={SECTIONS}
+          sections={filteredSections}
           activeTab={activeTab}
           onChange={setActiveTab}
           ariaLabel="Apartados de movimientos"
@@ -178,7 +193,7 @@ export default function Movimientos() {
           </Card>
         )}
 
-        {activeTab === "ordenes" && (
+        {activeTab === "ordenes" && !isEmployee && (
           <Card>
             <Ordenes />
           </Card>

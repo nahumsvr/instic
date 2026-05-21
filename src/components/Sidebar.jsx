@@ -122,10 +122,15 @@ function SidebarContent({ onNavigate }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const isUserManager = (user?.rol ?? user?.role ?? "").toUpperCase() === "MANAGER";
-  const filteredNavItems = NAV_ITEMS.filter(
-    (item) => !(item.to === "/mobile-warehouse" && isUserManager)
-  );
+  const userRole = (user?.rol ?? user?.role ?? "").toUpperCase();
+  const isUserManager = userRole === "MANAGER";
+  const isUserEmployee = userRole === "EMPLOYEE" || userRole === "EMPLEADO";
+
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.to === "/mobile-warehouse" && isUserManager) return false;
+    if (item.to === "/dashboard" && isUserEmployee) return false;
+    return true;
+  });
 
   const navItems = [
     ...filteredNavItems,
