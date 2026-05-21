@@ -30,7 +30,21 @@ export default function MasterInventory() {
         size: "N/A",
         unitCost: 0,
         unitPrice: 0,
+        stockConfigs: [],
     });
+
+    // Inicializa los stockConfigs con todas las ubicaciones cuando se abre el modal de nuevo artículo
+    const buildStockConfigs = (locs) =>
+        locs.map((loc) => ({ locationId: loc.id_ubicacion, minStock: 0, maxStock: 0 }));
+
+    const updateStockConfig = (locationId, field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            stockConfigs: prev.stockConfigs.map((sc) =>
+                sc.locationId === locationId ? { ...sc, [field]: value } : sc
+            ),
+        }));
+    };
 
     const fetchLocations = useCallback(async () => {
         try {
@@ -89,20 +103,52 @@ export default function MasterInventory() {
             size: "N/A", // Default value
             unitCost: 0,
             unitPrice: 0,
+            stockConfigs: buildStockConfigs(locations),
         });
         setOpened(true);
     };
 
-    const handleEdit = (item) => {
+    const handleEdit = async (item) => {
         setEditingId(item.id_articulo);
-        setFormData({
+
+        const base = {
             code: item.codigo,
             name: item.nombre,
             category: item.category || "General",
             size: item.size || "N/A",
-            unitCost: item.costo_unitario || 0,
-            unitPrice: item.precio_unitario || 0,
-        });
+            unitCost: Number(item.costo_unitario) || 0,
+            unitPrice: Number(item.precio_unitario) || 0,
+            stockConfigs: [],
+        };
+
+        if (storeFilter) {
+            const locationId = Number(storeFilter);
+            try {
+                // GET /articles/:id devuelve todos los inventarios con id_inventario,
+                // stock_minimo y stock_maximo reales (sin filtrar por cantidad_actual).
+                const res = await fetch(
+                    `${API_BASE_URL}/articles/${item.id_articulo}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (res.ok) {
+                    const articleDetail = await res.json();
+                    const inv = (articleDetail.inventarios ?? []).find(
+                        (i) => (i.location?.id_ubicacion ?? i.id_ubicacion) === locationId
+                    );
+                    base.stockConfigs = [{
+                        inventarioId: inv?.id_inventario ?? null,
+                        locationId,
+                        minStock: inv?.stock_minimo ?? 0,
+                        maxStock: inv?.stock_maximo ?? 0,
+                    }];
+                }
+            } catch {
+                // Si falla el fetch, dejar stockConfigs vacío: el modal se abrirá
+                // sin el bloque de stock para no mostrar valores erróneos.
+            }
+        }
+
+        setFormData(base);
         setOpened(true);
     };
 
@@ -140,7 +186,17 @@ export default function MasterInventory() {
             const url = isEdit ? `${API_BASE_URL}/articles/${editingId}` : `${API_BASE_URL}/articles`;
             const method = isEdit ? "PATCH" : "POST";
 
-            const payload = { ...formData };
+            // Payload del artículo (sin stockConfigs en edición, se maneja por separado)
+            const payload = {
+                code: formData.code,
+                name: formData.name,
+                category: formData.category,
+                size: formData.size,
+                unitCost: Number(formData.unitCost) || 0,
+                unitPrice: Number(formData.unitPrice) || 0,
+                // En creación incluir stockConfigs; en edición se actualiza vía /inventory/:id
+                ...(!isEdit && formData.stockConfigs?.length > 0 && { stockConfigs: formData.stockConfigs }),
+            };
 
             const res = await fetch(url, {
                 method,
@@ -154,6 +210,37 @@ export default function MasterInventory() {
             if (!res.ok) {
                 const body = await res.json().catch(() => ({}));
                 throw new Error(body?.message || "Error al guardar el artículo");
+            }
+
+            // En edición: actualizar stock_minimo y stock_maximo via PATCH /inventory/:id_inventario
+            if (isEdit && formData.stockConfigs?.length > 0) {
+                const stockErrors = [];
+                await Promise.all(
+                    formData.stockConfigs.map(async (sc) => {
+                        if (!sc.inventarioId) return; // sin id no podemos actualizar
+                        const invRes = await fetch(`${API_BASE_URL}/inventory/${sc.inventarioId}`, {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                stock_minimo: Number(sc.minStock),
+                                stock_maximo: Number(sc.maxStock),
+                            }),
+                        });
+                        if (!invRes.ok) {
+                            const errBody = await invRes.json().catch(() => ({}));
+                            stockErrors.push(errBody?.message || `Error actualizando inventario ${sc.inventarioId}`);
+                        }
+                    })
+                );
+                if (stockErrors.length > 0) {
+                    toast.warning(`Artículo guardado, pero hubo errores en el stock: ${stockErrors.join(', ')}`);
+                    setOpened(false);
+                    fetchData();
+                    return;
+                }
             }
 
             toast.success(isEdit ? "Artículo actualizado correctamente" : "Artículo creado correctamente");
@@ -457,11 +544,19 @@ export default function MasterInventory() {
                         borderRadius: "10px",
                         border: "1px solid var(--ds-border)",
                         boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
+                        display: "flex",
+                        flexDirection: "column",
                     },
                     header: {
                         backgroundColor: "var(--ds-surface)",
                         borderBottom: "1px solid var(--ds-border)",
                         marginBottom: "16px",
+                        flexShrink: 0,
+                    },
+                    body: {
+                        overflowY: "auto",
+                        maxHeight: "65vh",
+                        paddingRight: "8px",
                     },
                     close: {
                         color: "var(--ds-text)",
@@ -506,6 +601,66 @@ export default function MasterInventory() {
                             styles={{ input: { backgroundColor: "var(--ds-bg)", borderColor: "var(--ds-border)" } }}
                         />
                     </div>
+
+                    {/* Sección de stock mínimo y máximo por ubicación */}
+                    {/* Al crear: todas las ubicaciones. Al editar con tienda filtrada: solo esa ubicación */}
+                    {formData.stockConfigs && formData.stockConfigs.length > 0 && (
+                        <div>
+                            <p
+                                className="text-xs font-semibold uppercase tracking-wider mb-3"
+                                style={{ color: "var(--ds-muted)" }}
+                            >
+                                {editingId ? "Stock de la Ubicación" : "Stock por Ubicación"}
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                {formData.stockConfigs.map((sc) => {
+                                    const loc = locations.find((l) => l.id_ubicacion === sc.locationId);
+                                    return (
+                                        <div
+                                            key={sc.locationId}
+                                            className="p-3 rounded-lg"
+                                            style={{
+                                                border: "1px solid var(--ds-border)",
+                                                background: "var(--ds-bg)",
+                                            }}
+                                        >
+                                            {/* En modo crear mostramos el nombre de la ubicación encima de cada bloque */}
+                                            {!editingId && (
+                                                <p
+                                                    className="text-xs font-medium mb-2"
+                                                    style={{ color: "var(--ds-text)" }}
+                                                >
+                                                    {loc?.nombre ?? `Ubicación ${sc.locationId}`}
+                                                </p>
+                                            )}
+                                            <div className="flex gap-3">
+                                                <NumberInput
+                                                    label="Stock mínimo"
+                                                    min={0}
+                                                    step={1}
+                                                    allowDecimal={false}
+                                                    className="flex-1"
+                                                    value={sc.minStock}
+                                                    onChange={(val) => updateStockConfig(sc.locationId, "minStock", val ?? 0)}
+                                                    styles={{ input: { backgroundColor: "var(--ds-surface)", borderColor: "var(--ds-border)" } }}
+                                                />
+                                                <NumberInput
+                                                    label="Stock máximo"
+                                                    min={0}
+                                                    step={1}
+                                                    allowDecimal={false}
+                                                    className="flex-1"
+                                                    value={sc.maxStock}
+                                                    onChange={(val) => updateStockConfig(sc.locationId, "maxStock", val ?? 0)}
+                                                    styles={{ input: { backgroundColor: "var(--ds-surface)", borderColor: "var(--ds-border)" } }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     <Group justify="space-between" mt="xl">
                         {editingId ? (
