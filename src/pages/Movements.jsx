@@ -88,7 +88,7 @@ const ButtonDanger = ({ children, className = "", ...props }) => (
 const BadgeStatus = ({ status }) => {
   let style;
   let dot = false;
-  let text = "";
+  let text;
 
   if (status === 'COMPLETED') {
     style = {
@@ -470,10 +470,17 @@ function Registrar() {
       <Select
         label="Tipo de Movimiento"
         value={type}
-        onChange={(val) => setType(val)}
+        onChange={(val) => {
+          setType(val);
+          setFormData((prev) => ({
+            ...prev,
+            originId: '',
+            destinationId: '',
+          }));
+        }}
         data={[
-          { value: 'input', label: 'Entrada' },
-          { value: 'output', label: 'Salida' },
+          { value: 'input', label: 'compra (entrada)' },
+          { value: 'output', label: 'venta (salida)' },
         ]}
         required
       />
@@ -515,28 +522,6 @@ function Registrar() {
           value={formData.destinationId}
           onChange={(val) => setFormData({ ...formData, destinationId: val })}
           required
-        />
-      )}
-
-      {type === 'input' && (
-        <Select
-          label="Ubicación Origen (Opcional - Proveedor externo)"
-          placeholder="Selecciona origen si aplica"
-          data={locationOptions}
-          value={formData.originId}
-          onChange={(val) => setFormData({ ...formData, originId: val })}
-          clearable
-        />
-      )}
-
-      {type === 'output' && (
-        <Select
-          label="Ubicación Destino (Opcional - Venta final)"
-          placeholder="Selecciona destino si aplica"
-          data={locationOptions}
-          value={formData.destinationId}
-          onChange={(val) => setFormData({ ...formData, destinationId: val })}
-          clearable
         />
       )}
 
