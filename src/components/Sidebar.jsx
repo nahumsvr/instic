@@ -122,8 +122,13 @@ function SidebarContent({ onNavigate }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  const isUserManager = (user?.rol ?? user?.role ?? "").toUpperCase() === "MANAGER";
+  const filteredNavItems = NAV_ITEMS.filter(
+    (item) => !(item.to === "/mobile-warehouse" && isUserManager)
+  );
+
   const navItems = [
-    ...NAV_ITEMS,
+    ...filteredNavItems,
     ...(isAdmin(user) ? [{ label: "Administración", to: "/admin", icon: Shield, accent: [244, 63, 94] }] : []),
   ];
 
