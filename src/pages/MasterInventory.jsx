@@ -111,7 +111,6 @@ export default function MasterInventory() {
     const handleEdit = async (item) => {
         setEditingId(item.id_articulo);
 
-        // Datos base del artículo
         const base = {
             code: item.codigo,
             name: item.nombre,
@@ -122,39 +121,30 @@ export default function MasterInventory() {
             stockConfigs: [],
         };
 
-        // Si hay una ubicación seleccionada, consultar el inventario para obtener min/max stock reales
         if (storeFilter) {
             const locationId = Number(storeFilter);
             try {
+                // GET /articles/:id devuelve todos los inventarios con id_inventario,
+                // stock_minimo y stock_maximo reales (sin filtrar por cantidad_actual).
                 const res = await fetch(
-                    `${API_BASE_URL}/inventory?articleId=${item.id_articulo}`,
+                    `${API_BASE_URL}/articles/${item.id_articulo}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 if (res.ok) {
-                    const inv = await res.json();
-                    // El endpoint devuelve { locations: [{ location: { id }, stockActual, minStock, maxStock, ... }] }
-                    const locData = (inv.locations ?? []).find(
-                        (l) => (l.location?.id ?? l.locationId) === locationId
+                    const articleDetail = await res.json();
+                    const inv = (articleDetail.inventarios ?? []).find(
+                        (i) => (i.location?.id_ubicacion ?? i.id_ubicacion) === locationId
                     );
                     base.stockConfigs = [{
+                        inventarioId: inv?.id_inventario ?? null,
                         locationId,
-                        minStock: locData?.stockMinimo ?? locData?.min_stock ?? locData?.stock_minimo ?? 0,
-                        maxStock: locData?.stockMaximo ?? locData?.max_stock ?? locData?.stock_maximo ?? 0,
-                    }];
-                } else {
-                    // Fallback: intentar leer directo del item
-                    base.stockConfigs = [{
-                        locationId,
-                        minStock: item.min_stock ?? item.minStock ?? item.stock_minimo ?? 0,
-                        maxStock: item.max_stock ?? item.maxStock ?? item.stock_maximo ?? 0,
+                        minStock: inv?.stock_minimo ?? 0,
+                        maxStock: inv?.stock_maximo ?? 0,
                     }];
                 }
             } catch {
-                base.stockConfigs = [{
-                    locationId,
-                    minStock: item.min_stock ?? item.minStock ?? item.stock_minimo ?? 0,
-                    maxStock: item.max_stock ?? item.maxStock ?? item.stock_maximo ?? 0,
-                }];
+                // Si falla el fetch, dejar stockConfigs vacío: el modal se abrirá
+                // sin el bloque de stock para no mostrar valores erróneos.
             }
         }
 
@@ -196,15 +186,17 @@ export default function MasterInventory() {
             const url = isEdit ? `${API_BASE_URL}/articles/${editingId}` : `${API_BASE_URL}/articles`;
             const method = isEdit ? "PATCH" : "POST";
 
+            // Payload del artículo (sin stockConfigs en edición, se maneja por separado)
             const payload = {
-                ...formData,
+                code: formData.code,
+                name: formData.name,
+                category: formData.category,
+                size: formData.size,
                 unitCost: Number(formData.unitCost) || 0,
                 unitPrice: Number(formData.unitPrice) || 0,
+                // En creación incluir stockConfigs; en edición se actualiza vía /inventory/:id
+                ...(!isEdit && formData.stockConfigs?.length > 0 && { stockConfigs: formData.stockConfigs }),
             };
-            // Enviar stockConfigs en creación, o en edición si hay ubicación filtrada con config
-            if (!payload.stockConfigs || payload.stockConfigs.length === 0) {
-                delete payload.stockConfigs;
-            }
 
             const res = await fetch(url, {
                 method,
@@ -218,6 +210,37 @@ export default function MasterInventory() {
             if (!res.ok) {
                 const body = await res.json().catch(() => ({}));
                 throw new Error(body?.message || "Error al guardar el artículo");
+            }
+
+            // En edición: actualizar stock_minimo y stock_maximo via PATCH /inventory/:id_inventario
+            if (isEdit && formData.stockConfigs?.length > 0) {
+                const stockErrors = [];
+                await Promise.all(
+                    formData.stockConfigs.map(async (sc) => {
+                        if (!sc.inventarioId) return; // sin id no podemos actualizar
+                        const invRes = await fetch(`${API_BASE_URL}/inventory/${sc.inventarioId}`, {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                stock_minimo: Number(sc.minStock),
+                                stock_maximo: Number(sc.maxStock),
+                            }),
+                        });
+                        if (!invRes.ok) {
+                            const errBody = await invRes.json().catch(() => ({}));
+                            stockErrors.push(errBody?.message || `Error actualizando inventario ${sc.inventarioId}`);
+                        }
+                    })
+                );
+                if (stockErrors.length > 0) {
+                    toast.warning(`Artículo guardado, pero hubo errores en el stock: ${stockErrors.join(', ')}`);
+                    setOpened(false);
+                    fetchData();
+                    return;
+                }
             }
 
             toast.success(isEdit ? "Artículo actualizado correctamente" : "Artículo creado correctamente");
